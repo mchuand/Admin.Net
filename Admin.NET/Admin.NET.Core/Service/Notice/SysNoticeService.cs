@@ -4,6 +4,9 @@
 //
 // 不得利用本项目从事危害国家安全、扰乱社会秩序、侵犯他人合法权益等法律法规禁止的活动！任何基于本项目二次开发而产生的一切法律纠纷和责任，我们不承担任何责任！
 
+using Admin.NET.Core.Utils.AdvancedQuery;
+using Admin.NET.Core.Utils.AdvancedQuery.Models;
+
 namespace Admin.NET.Core.Service;
 
 /// <summary>
@@ -33,7 +36,32 @@ public class SysNoticeService : IDynamicApiController, ITransient
     }
 
     /// <summary>
-    /// 获取通知公告分页列表 📢
+    /// 获取通知公告分页列表（高级查询） 🔖
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [DisplayName("获取通知公告分页列表（高级查询）")]
+    public virtual async Task<SqlSugarPagedList<SysNotice>> PageAdvanced(PageAdvancedInput input)
+    {
+        var query = _sysNoticeRep.AsQueryable()
+            .WhereIF(!_userManager.SuperAdmin, u => u.CreateUserId == _userManager.UserId);
+
+        // 使用关键字字段列表进行模糊匹配
+        if (!string.IsNullOrWhiteSpace(input.Keyword) && input.KeywordFields != null && input.KeywordFields.Count > 0)
+        {
+            var keyword = input.Keyword.Trim();
+            query = query.ApplyKeywordSearch(input.KeywordFields, keyword);
+        }
+
+        query = query.ApplyAdvancedQuery(input.Conditions);
+
+        query = query.OrderBy(u => u.CreateTime, OrderByType.Desc);
+
+        return await query.ToPagedListAsync(input.Page, input.PageSize);
+    }
+
+    /// <summary>
+    /// 获取通知公告分页列表 🔖📢
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>

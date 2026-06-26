@@ -4,6 +4,9 @@
 //
 // 不得利用本项目从事危害国家安全、扰乱社会秩序、侵犯他人合法权益等法律法规禁止的活动！任何基于本项目二次开发而产生的一切法律纠纷和责任，我们不承担任何责任！
 
+using Admin.NET.Core.Utils.AdvancedQuery;
+using Admin.NET.Core.Utils.AdvancedQuery.Models;
+
 namespace Admin.NET.Core.Service;
 
 /// <summary>
@@ -32,6 +35,22 @@ public class SysWechatUserService : IDynamicApiController, ITransient
             .WhereIF(!string.IsNullOrWhiteSpace(input.Mobile), u => u.Mobile.Contains(input.Mobile))
             .OrderBy(u => u.Id, OrderByType.Desc)
             .ToPagedListAsync(input.Page, input.PageSize);
+    }
+
+    /// <summary>
+    /// 获取微信用户列表（高级查询） 🔖
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [DisplayName("获取微信用户列表（高级查询）")]
+    public virtual async Task<SqlSugarPagedList<SysWechatUser>> PageAdvanced(PageAdvancedInput input)
+    {
+        var query = _sysWechatUserRep.AsQueryable()
+            .ApplyKeywordSearch(input.KeywordFields, input.Keyword)
+            .ApplyAdvancedQuery(input.Conditions)
+            .OrderBy(u => u.Id, OrderByType.Desc);
+
+        return await query.ToPagedListAsync(input.Page, input.PageSize);
     }
 
     /// <summary>

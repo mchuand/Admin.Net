@@ -27,7 +27,7 @@ import { AdminResultString } from '../models';
 import { AdminResultSysUser } from '../models';
 import { ChangePwdInput } from '../models';
 import { DeleteUserInput } from '../models';
-import { PageUserAdvancedInput } from '../models';
+import { PageAdvancedInput } from '../models';
 import { PageUserInput } from '../models';
 import { ResetPwdUserInput } from '../models';
 import { SysUser } from '../models';
@@ -425,11 +425,11 @@ export const SysUserApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * 
          * @summary 获取用户分页列表（高级查询） 🔖
-         * @param {PageUserAdvancedInput} [body] 
+         * @param {PageAdvancedInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiSysUserPageAdvancedPost: async (body?: PageUserAdvancedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiSysUserPageAdvancedPost: async (body?: PageAdvancedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/sysUser/pageAdvanced`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, 'https://example.com');
@@ -833,11 +833,11 @@ export const SysUserApiFp = function(configuration?: Configuration) {
         /**
          * 
          * @summary 获取用户分页列表（高级查询） 🔖
-         * @param {PageUserAdvancedInput} [body] 
+         * @param {PageAdvancedInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiSysUserPageAdvancedPost(body?: PageUserAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListUserOutput>>> {
+        async apiSysUserPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListUserOutput>>> {
             const localVarAxiosArgs = await SysUserApiAxiosParamCreator(configuration).apiSysUserPageAdvancedPost(body, options);
             return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
                 const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
@@ -1005,11 +1005,11 @@ export const SysUserApiFactory = function (configuration?: Configuration, basePa
         /**
          * 
          * @summary 获取用户分页列表（高级查询） 🔖
-         * @param {PageUserAdvancedInput} [body] 
+         * @param {PageAdvancedInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiSysUserPageAdvancedPost(body?: PageUserAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListUserOutput>> {
+        async apiSysUserPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListUserOutput>> {
             return SysUserApiFp(configuration).apiSysUserPageAdvancedPost(body, options).then((request) => request(axios, basePath));
         },
         /**
@@ -1162,12 +1162,12 @@ export class SysUserApi extends BaseAPI {
     /**
      * 
      * @summary 获取用户分页列表（高级查询） 🔖
-     * @param {PageUserAdvancedInput} [body] 
+     * @param {PageAdvancedInput} [body] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof SysUserApi
      */
-    public async apiSysUserPageAdvancedPost(body?: PageUserAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListUserOutput>> {
+    public async apiSysUserPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListUserOutput>> {
         return SysUserApiFp(this.configuration).apiSysUserPageAdvancedPost(body, options).then((request) => request(this.axios, this.basePath));
     }
     /**

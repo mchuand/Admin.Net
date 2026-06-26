@@ -1,6 +1,4 @@
-using Admin.NET.Core.Utils.AdvancedQuery.Enum;
-
-namespace Admin.NET.Core.Utils.AdvancedQuery.Models;
+namespace Admin.NET.Core;
 
 /// <summary>
 /// 查询条件项

@@ -143,8 +143,14 @@ const nodeClick = (node: any) => {
 	emits('node-click', node);
 };
 
+// 获取当前选中的节点
+const getSelectedNode = () => {
+	const node = treeRef.value!.getCurrentNode();
+	return node ? { id: node.id, name: node.name } : null;
+};
+
 // 导出对象
-defineExpose({ initTreeData, setCheckedKeys, getCheckedKeys });
+defineExpose({ initTreeData, setCheckedKeys, getCheckedKeys, getSelectedNode });
 </script>
 
 <style lang="scss" scoped>

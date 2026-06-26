@@ -4,6 +4,9 @@
 //
 // 不得利用本项目从事危害国家安全、扰乱社会秩序、侵犯他人合法权益等法律法规禁止的活动！任何基于本项目二次开发而产生的一切法律纠纷和责任，我们不承担任何责任！
 
+using Admin.NET.Core.Utils.AdvancedQuery;
+using Admin.NET.Core.Utils.AdvancedQuery.Models;
+
 namespace Admin.NET.Core.Service;
 
 /// <summary>
@@ -91,6 +94,57 @@ public class SysOrgService : IDynamicApiController, ITransient
             if (org.Children != null)
                 HandlerOrgTree(org.Children, userOrgIdList);
         }
+    }
+
+    /// <summary>
+    /// 获取机构列表（高级查询） 🔖
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [DisplayName("获取机构列表（高级查询）")]
+    public virtual async Task<List<SysOrg>> PageAdvanced(PageAdvancedInput input)
+    {
+        // 获取拥有的机构Id集合
+        var userOrgIdList = await GetUserOrgIdList();
+
+        var query = _sysOrgRep.AsQueryable()
+            .WhereIF(userOrgIdList.Count > 0, u => userOrgIdList.Contains(u.Id))
+            .OrderBy(u => new { u.OrderNo, u.Id });
+
+        // 使用关键字字段列表进行模糊匹配
+        if (!string.IsNullOrWhiteSpace(input.Keyword) && input.KeywordFields != null && input.KeywordFields.Count > 0)
+        {
+            var keyword = input.Keyword.Trim();
+            query = query.ApplyKeywordSearch(input.KeywordFields, keyword);
+        }
+
+        query = query.ApplyAdvancedQuery(input.Conditions);
+
+        // 如果指定了父节点ID，筛选该节点下的子树
+        long pid = input.Conditions.Find(t => t.Field.Trim() == "id")?.Value.ParseToLong() ?? 0;
+
+        List<SysOrg> orgTree;
+        if (_userManager.SuperAdmin)
+        {
+            orgTree = await query.ToTreeAsync(u => u.Children, u => u.Pid, pid);
+        }
+        else
+        {
+            orgTree = await query.ToTreeAsync(u => u.Children, u => u.Pid, pid, userOrgIdList.Select(d => (object)d).ToArray());
+            HandlerOrgTree(orgTree, userOrgIdList);
+        }
+
+        if (pid > 0)
+        {
+            var sysOrg = await _sysOrgRep.GetSingleAsync(u => u.Id == pid);
+            if (sysOrg != null)
+            {
+                sysOrg.Children = orgTree;
+                orgTree = new List<SysOrg> { sysOrg };
+            }
+        }
+
+        return orgTree;
     }
 
     /// <summary>

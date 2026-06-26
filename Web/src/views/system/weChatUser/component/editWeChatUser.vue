@@ -1,5 +1,5 @@
 <template>
-	<div class="weChatUser-container">
+	<div class="weChatUser-edit-container">
 		<el-dialog v-model="state.isShowDialog" draggable :close-on-click-modal="false" width="700px">
 			<template #header>
 				<div style="color: #fff">

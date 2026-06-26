@@ -1,33 +1,30 @@
-﻿<template>
+<template>
 	<div class="sysLdap-container">
-		<el-card shadow="hover" :body-style="{ paddingBottom: '0' }">
-			<el-form :model="state.queryParams" ref="queryForm" :inline="true">
-				<el-form-item label="租户" v-if="userStore.userInfos.accountType == 999">
-					<el-select v-model="state.queryParams.tenantId" placeholder="租户" style="width: 100%">
-						<el-option :value="item.value" :label="`${item.label} (${item.host})`" v-for="(item, index) in state.tenantList" :key="index" />
-					</el-select>
-				</el-form-item>
-				<el-form-item label="关键字">
-					<el-input v-model="state.queryParams.keyword" clearable placeholder="请输入模糊查询关键字" />
-				</el-form-item>
-				<el-form-item label="主机">
-					<el-input v-model="state.queryParams.host" clearable placeholder="请输入主机" />
-				</el-form-item>
-				<el-form-item>
-					<el-button-group>
-						<el-button type="primary" icon="ele-Search" @click="handleQuery" v-auth="'sysLdap:page'"> 查询 </el-button>
-						<el-button icon="ele-Refresh" @click="resetQuery"> 重置 </el-button>
-					</el-button-group>
-				</el-form-item>
-				<el-form-item>
-					<el-button type="primary" icon="ele-Plus" @click="openAddSysLdap" v-auth="'sysLdap:add'"> 新增 </el-button>
-				</el-form-item>
-			</el-form>
-		</el-card>
 
-		<el-card class="full-table" shadow="hover" style="margin-top: 5px">
-			<el-table :data="state.tableData" style="width: 100%" v-loading="state.loading" border>
-				<el-table-column type="index" label="序号" width="55" align="center" />
+		<el-card class="full-table" header-class="card_header" shadow="hover" style="margin-top: 5px">
+			<template #header>
+				<!-- 按钮栏组件 -->
+				<ButtonBar mode="sysLdap" :buttonConfig="ldapButtonConfig" displayStyle="inline"
+					:onButtonClick="handleButtonClick" />
+
+				<!-- 高级查询组件 -->
+				<AdvancedSearch ref="searchRef" :fields="searchFields" :keywordFields="keywordFields"
+					mode="sysLdap" :disableAutoQuery="true" @query="handleAdvancedQuery" @reset="handleAdvancedReset" />
+
+				<!-- 租户选择（超级管理员） -->
+				<el-form v-if="userStore.userInfos.accountType == 999" :inline="true" style="margin-top: 5px">
+					<el-form-item label="租户">
+						<el-select v-model="state.queryParams.tenantId" placeholder="租户" style="width: 100%">
+							<el-option :value="item.value" :label="`${item.label} (${item.host})`" v-for="(item, index) in state.tenantList" :key="index" />
+						</el-select>
+					</el-form-item>
+				</el-form>
+			</template>
+
+			<el-table ref="tableRef" :data="state.tableData" style="width: 100%" v-loading="state.loading" border
+				@selection-change="handleSelectionChange" @row-click="handleRowClick">
+				<el-table-column type="selection" width="55" align="center" fixed />
+				<el-table-column type="index" label="序号" width="55" align="center" fixed />
 				<el-table-column prop="host" label="主机" min-width="150" show-overflow-tooltip />
 				<el-table-column prop="port" label="端口" show-overflow-tooltip />
 				<el-table-column prop="baseDn" label="用户搜索基准" show-overflow-tooltip />
@@ -45,53 +42,62 @@
 						<ModifyRecord :data="scope.row" />
 					</template>
 				</el-table-column>
-				<el-table-column label="操作" width="300" align="center" fixed="right" show-overflow-tooltip v-if="auth('sysLdap:update') || auth('sysLdap:delete') || auth('sysLdap:syncUser') || auth('sysLdap:syncOrg')">
-					<template #default="scope">
-						<el-button icon="ele-Edit" size="small" text type="primary" @click="openEditSysLdap(scope.row)" v-auth="'sysLdap:update'"> 编辑 </el-button>
-						<el-button icon="ele-Delete" size="small" text type="danger" @click="delSysLdap(scope.row)" v-auth="'sysLdap:delete'"> 删除 </el-button>
-						<el-button icon="ele-Refresh" size="small" text type="primary" @click="syncDomainUser(scope.row)" v-auth="'sysLdap:syncUser'"> 同步域账户 </el-button>
-						<el-button icon="ele-Refresh" size="small" text type="primary" @click="syncDomainOrg(scope.row)" v-auth="'sysLdap:syncOrg'"> 同步域组织 </el-button>
-					</template>
-				</el-table-column>
 			</el-table>
-			<el-pagination
-				v-model:currentPage="state.tableParams.page"
-				v-model:page-size="state.tableParams.pageSize"
-				:total="state.tableParams.total"
-				:page-sizes="[10, 20, 50, 100, 200, 500]"
-				size="small"
-				background
-				@size-change="handleSizeChange"
-				@current-change="handleCurrentChange"
-				layout="total, sizes, prev, pager, next, jumper"
-			/>
+			<el-pagination v-model:currentPage="state.tableParams.page"
+				v-model:page-size="state.tableParams.pageSize" :total="state.tableParams.total"
+				:page-sizes="[10, 20, 50, 100, 200, 500]" size="small" background @size-change="handleSizeChange"
+				@current-change="handleCurrentChange" layout="total, sizes, prev, pager, next, jumper" />
 		</el-card>
-
-		<EditLdap ref="editLdapRef" :title="state.dialogTitle" @handleQuery="handleQuery" />
+		<EditLdap ref="editLdapRef" :title="state.dialogTitle" @handleQuery="handleAdvancedQuery(state.advancedConditions)" />
 	</div>
 </template>
 
 <script lang="ts" setup name="sysLdap">
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, shallowRef } from 'vue';
 import { ElMessageBox, ElMessage } from 'element-plus';
-import { auth } from '/@/utils/authFunction';
 import { getAPI } from '/@/utils/axios-utils';
-import {SysLdapApi, SysTenantApi} from '/@/api-services/api';
+import { SysLdapApi, SysTenantApi } from '/@/api-services/api';
 import ModifyRecord from '/@/components/table/modifyRecord.vue';
 import EditLdap from './component/editLdap.vue';
+import ButtonBar from '/@/components/buttonBar/index.vue';
+import AdvancedSearch from '/@/components/advancedSearch/index.vue';
+import type { SearchField, QueryCondition } from '/@/components/advancedSearch/types';
 import { useUserInfo } from "/@/stores/userInfo";
 
 const userStore = useUserInfo();
 const editLdapRef = ref<InstanceType<typeof EditLdap>>();
+const searchRef = ref();
+const tableRef = ref();
+const selectRows = shallowRef<any[]>([]);
+
+// 搜索字段配置
+const searchFields: SearchField[] = [
+	{ label: '关键字', prop: 'keyword', type: 'string' },
+	{ label: '主机', prop: 'host', type: 'string' },
+];
+
+// 关键字搜索字段列表
+const keywordFields = ['host', 'baseDn'];
+
+// 表格选中
+const handleRowClick = (row: any) => {
+	const table = tableRef.value;
+	if (!table) return;
+	table.toggleRowSelection(row);
+};
+
+const handleSelectionChange = (rows: any[]) => {
+	selectRows.value = rows;
+};
+
 const state = reactive({
 	loading: false,
 	tenantList: [] as Array<any>,
 	tableData: [] as any,
 	queryParams: {
-		tenantId: undefined,
-		keyword: undefined,
-		host: undefined,
+		tenantId: undefined as number | undefined,
 	},
+	advancedConditions: [] as QueryCondition[],
 	tableParams: {
 		page: 1,
 		pageSize: 50,
@@ -100,29 +106,129 @@ const state = reactive({
 	dialogTitle: '',
 });
 
+// 按钮栏配置
+const ldapButtonConfig = {
+	base: {
+		type: 'group' as const,
+		childs: {
+			add: { type: 'button' as const, label: '新增', icon: 'ele-Plus', color: 'primary' as const },
+			update: { type: 'button' as const, label: '修改', icon: 'ele-Edit', color: 'success' as const },
+			delete: { type: 'button' as const, label: '删除', icon: 'ele-Delete', color: 'danger' as const },
+		}
+	},
+	tool: {
+		type: 'group' as const,
+		childs: {
+			syncUser: { type: 'button' as const, label: '同步域账户', icon: 'ele-Refresh', color: 'primary' as const },
+			syncOrg: { type: 'button' as const, label: '同步域组织', icon: 'ele-Refresh', color: 'primary' as const },
+		}
+	},
+};
+
+// 按钮栏点击事件
+const handleButtonClick = (key: string) => {
+	switch (key) {
+		case 'add': openAddSysLdap(); break;
+		case 'update': handleBatchUpdate(); break;
+		case 'delete': handleBatchDelete(); break;
+		case 'syncUser': handleBatchSyncUser(); break;
+		case 'syncOrg': handleBatchSyncOrg(); break;
+	}
+};
+
+// 校验选中行
+const validateSelection = (minCount = 1, maxCount?: number): boolean => {
+	if (selectRows.value.length < minCount) {
+		ElMessage.warning(`请至少选择${minCount}条记录`);
+		return false;
+	}
+	if (maxCount && selectRows.value.length > maxCount) {
+		ElMessage.warning(`最多选择${maxCount}条记录`);
+		return false;
+	}
+	return true;
+};
+
+// 批量编辑
+const handleBatchUpdate = () => {
+	if (!validateSelection(1, 1)) return;
+	openEditSysLdap(selectRows.value[0]);
+};
+
+// 批量删除
+const handleBatchDelete = () => {
+	if (!validateSelection()) return;
+	const hosts = selectRows.value.map((r: any) => r.host).join('、');
+	ElMessageBox.confirm(`确定要删除域登录信息配置「${hosts}」吗?`, '提示', {
+		confirmButtonText: '确定',
+		cancelButtonText: '取消',
+		type: 'warning',
+	}).then(async () => {
+		state.loading = true;
+		const ids = selectRows.value.map((r: any) => r.id);
+		await Promise.all(ids.map((id: any) => getAPI(SysLdapApi).apiSysLdapDeletePost({ id })));
+		await handleAdvancedQuery(state.advancedConditions);
+		selectRows.value = [];
+		ElMessage.success('删除成功');
+	}).catch(() => { });
+};
+
+// 批量同步域账户
+const handleBatchSyncUser = () => {
+	if (!validateSelection(1, 1)) return;
+	syncDomainUser(selectRows.value[0]);
+};
+
+// 批量同步域组织
+const handleBatchSyncOrg = () => {
+	if (!validateSelection(1, 1)) return;
+	syncDomainOrg(selectRows.value[0]);
+};
+
 onMounted(async () => {
 	if (userStore.userInfos.accountType == 999) {
 		state.tenantList = await getAPI(SysTenantApi).apiSysTenantListGet().then(res => res.data.result ?? []);
 		state.queryParams.tenantId = state.tenantList[0].value;
 	}
-	handleQuery();
+	await handleAdvancedQuery([]);
 });
 
-// 查询操作
-const handleQuery = async () => {
+// 高级查询（所有查询统一走此方法）
+const handleAdvancedQuery = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = conditions;
 	state.loading = true;
-	let params = Object.assign(state.queryParams, state.tableParams);
-	var res = await getAPI(SysLdapApi).apiSysLdapPagePost(params);
-	state.tableData = res.data.result?.items ?? [];
-	state.tableParams.total = res.data.result?.total;
+
+	const keywordValue = searchRef.value?.getKeyword?.() || '';
+
+	// 从 conditions 中提取 host 字段的值
+	let hostValue: string | undefined = undefined;
+	const hostCondition = conditions.find((c) => c.field === 'host');
+	if (hostCondition) {
+		hostValue = hostCondition.value;
+	}
+
+	let params: any = {
+		page: state.tableParams.page,
+		pageSize: state.tableParams.pageSize,
+		tenantId: state.queryParams.tenantId,
+		keyword: keywordValue,
+		host: hostValue,
+	};
+
+	try {
+		let res = await getAPI(SysLdapApi).apiSysLdapPagePost(params);
+		state.tableData = res.data.result?.items ?? [];
+		state.tableParams.total = res.data.result?.total;
+	} catch (error) {
+		console.error('查询失败:', error);
+	}
 	state.loading = false;
 };
 
-// 重置操作
-const resetQuery = () => {
-	state.queryParams.keyword = undefined;
-	state.queryParams.host = undefined;
-	handleQuery();
+// 高级查询重置
+const handleAdvancedReset = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = [];
+	await handleAdvancedQuery([]);
 };
 
 // 打开新增页面
@@ -137,33 +243,6 @@ const openEditSysLdap = (row: any) => {
 	editLdapRef.value?.openDialog(row);
 };
 
-// 删除
-const delSysLdap = (row: any) => {
-	ElMessageBox.confirm(`确定要删除域登录信息配置：【${row.host}】?`, '提示', {
-		confirmButtonText: '确定',
-		cancelButtonText: '取消',
-		type: 'warning',
-	})
-		.then(async () => {
-			await getAPI(SysLdapApi).apiSysLdapDeletePost({ id: row.id });
-			handleQuery();
-			ElMessage.success('删除成功');
-		})
-		.catch(() => {});
-};
-
-// 改变页面容量
-const handleSizeChange = (val: number) => {
-	state.tableParams.pageSize = val;
-	handleQuery();
-};
-
-// 改变页码序号
-const handleCurrentChange = (val: number) => {
-	state.tableParams.page = val;
-	handleQuery();
-};
-
 // 同步域账户
 const syncDomainUser = (row: any) => {
 	ElMessageBox.confirm(`确定要同步域账户吗?`, '提示', {
@@ -173,8 +252,8 @@ const syncDomainUser = (row: any) => {
 	})
 		.then(async () => {
 			await getAPI(SysLdapApi).apiSysLdapSyncUserPost({ id: row.id });
-			handleQuery();
-			ElMessage.success('删除成功');
+			await handleAdvancedQuery(state.advancedConditions);
+			ElMessage.success('同步成功');
 		})
 		.catch(() => {});
 };
@@ -187,10 +266,40 @@ const syncDomainOrg = (row: any) => {
 		type: 'warning',
 	})
 		.then(async () => {
-			await getAPI(SysLdapApi).apiSysLdapSyncOrgPost({ id: row.id });
-			handleQuery();
-			ElMessage.success('删除成功');
+			await getAPI(SysLdapApi).apiSysLdapSyncDeptPost({ id: row.id });
+			await handleAdvancedQuery(state.advancedConditions);
+			ElMessage.success('同步成功');
 		})
 		.catch(() => {});
 };
+
+// 改变页面容量
+const handleSizeChange = async (val: number) => {
+	state.tableParams.pageSize = val;
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
+};
+
+// 改变页码序号
+const handleCurrentChange = async (val: number) => {
+	state.tableParams.page = val;
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
+};
 </script>
+
+<style scoped lang="scss">
+.sysLdap-container {
+	height: 100%;
+}
+
+:deep(.card_header) {
+	padding: 0 3px 3px 3px;
+}
+</style>

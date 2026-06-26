@@ -1,5 +1,5 @@
 <template>
-	<div class="sysLdap-container">
+	<div class="sys-editLdap-container">
 		<el-dialog v-model="state.isShowDialog" draggable :close-on-click-modal="false" width="900px">
 			<template #header>
 				<div style="color: #fff">

@@ -1,5 +1,5 @@
 <template>
-	<div class="sys-config-container">
+	<div class="sys-tenant-config-dialog">
 		<el-dialog v-model="state.isShowDialog" draggable :close-on-click-modal="false" width="700px">
 			<template #header>
 				<div style="color: #fff">
@@ -91,7 +91,7 @@ import { UpdateConfigInput } from '/@/api-services/models';
 const props = defineProps({
 	title: String,
 });
-const emits = defineEmits(['updateData']);
+const emits = defineEmits(['handleQuery']);
 const ruleFormRef = ref();
 const state = reactive({
 	isShowDialog: false,
@@ -107,7 +107,7 @@ const openDialog = (row: any) => {
 
 // 关闭弹窗
 const closeDialog = () => {
-	emits('updateData');
+	emits('handleQuery');
 	state.isShowDialog = false;
 };
 

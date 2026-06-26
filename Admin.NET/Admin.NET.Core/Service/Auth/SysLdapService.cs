@@ -4,6 +4,8 @@
 //
 // 不得利用本项目从事危害国家安全、扰乱社会秩序、侵犯他人合法权益等法律法规禁止的活动！任何基于本项目二次开发而产生的一切法律纠纷和责任，我们不承担任何责任！
 
+using Admin.NET.Core.Utils.AdvancedQuery;
+using Admin.NET.Core.Utils.AdvancedQuery.Models;
 using Novell.Directory.Ldap;
 
 namespace Admin.NET.Core;
@@ -14,10 +16,12 @@ namespace Admin.NET.Core;
 [ApiDescriptionSettings(Order = 496, Description = "域登录配置")]
 public class SysLdapService : IDynamicApiController, ITransient
 {
+    private readonly UserManager _userManager;
     private readonly SqlSugarRepository<SysLdap> _sysLdapRep;
 
-    public SysLdapService(SqlSugarRepository<SysLdap> sysLdapRep)
+    public SysLdapService(UserManager userManager, SqlSugarRepository<SysLdap> sysLdapRep)
     {
+        _userManager = userManager;
         _sysLdapRep = sysLdapRep;
     }
 
@@ -34,6 +38,24 @@ public class SysLdapService : IDynamicApiController, ITransient
             .WhereIF(!string.IsNullOrWhiteSpace(input.Host), u => u.Host.Contains(input.Host.Trim()))
             .OrderBy(u => u.CreateTime, OrderByType.Desc)
             .ToPagedListAsync(input.Page, input.PageSize);
+    }
+
+    /// <summary>
+    /// 获取系统域登录配置分页列表（高级查询） 🔖
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [DisplayName("获取系统域登录配置分页列表（高级查询）")]
+    public async Task<SqlSugarPagedList<SysLdap>> PageAdvanced(PageAdvancedInput input)
+    {
+        var query = _sysLdapRep.AsQueryable()
+            .WhereIF(_userManager.SuperAdmin && input.Conditions.Any(t => t.Field.Trim() == "tenantId"), u => u.TenantId == input.Conditions.First(t => t.Field.Trim() == "tenantId").Value.ParseToLong())
+            .WhereIF(!_userManager.SuperAdmin, u => u.TenantId == _userManager.TenantId)
+            .ApplyKeywordSearch(input.KeywordFields, input.Keyword)
+            .ApplyAdvancedQuery(input.Conditions)
+            .OrderBy(u => u.Id, OrderByType.Desc);
+
+        return await query.ToPagedListAsync(input.Page, input.PageSize);
     }
 
     /// <summary>

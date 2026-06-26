@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Admin.NET.Core.Utils.AdvancedQuery.Models;
+namespace Admin.NET.Core;
 
 /// <summary>
 /// 分页高级查询输入参数

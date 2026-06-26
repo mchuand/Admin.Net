@@ -217,6 +217,11 @@ const props = defineProps({
 		type: Array as () => string[],
 		default: () => [],
 	},
+	// 禁止挂载时自动触发查询（由父组件控制初始查询时机）
+	disableAutoQuery: {
+		type: Boolean,
+		default: false,
+	},
 });
 
 const emit = defineEmits(['query', 'reset']);
@@ -468,8 +473,8 @@ const initParams = () => {
 		keyword.value = cachedParams._keyword;
 	}
 
-	// 如果有缓存参数，自动触发查询
-	if (cachedParams && Object.keys(cachedParams).length > 0) {
+	// 如果有缓存参数且未禁用自动查询，自动触发查询
+	if (!props.disableAutoQuery && cachedParams && Object.keys(cachedParams).length > 0) {
 		setTimeout(() => {
 			handleQuery();
 		}, 100);

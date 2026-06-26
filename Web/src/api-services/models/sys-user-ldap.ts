@@ -45,7 +45,7 @@ export interface SysUserLdap {
     userId?: number;
 
     /**
-     * 域账号 AD域对应sAMAccountName Ldap对应uid
+     * 域账号  AD域对应sAMAccountName  Ldap对应uid
      *
      * @type {string}
      * @memberof SysUserLdap

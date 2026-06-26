@@ -6,10 +6,8 @@ using System.Reflection;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using SqlSugar;
-using Admin.NET.Core.Utils.AdvancedQuery.Models;
-using Admin.NET.Core.Utils.AdvancedQuery.Enum;
 
-namespace Admin.NET.Core.Utils.AdvancedQuery;
+namespace Admin.NET.Core;
 
 /// <summary>
 /// 高级查询扩展方法
@@ -58,6 +56,7 @@ public static class AdvancedQueryExtension
     public static TQuery ApplyKeywordSearch<TQuery>(this TQuery queryable, List<string> keywordFields, string keyword)
         where TQuery : class
     {
+        keyword = keyword.Trim();
         if (keywordFields == null || keywordFields.Count == 0 || string.IsNullOrWhiteSpace(keyword))
         {
             Console.WriteLine("[关键字搜索] 参数无效，跳过");

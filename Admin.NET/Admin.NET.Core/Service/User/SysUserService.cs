@@ -104,10 +104,14 @@ public class SysUserService : IDynamicApiController, ITransient
                 Console.WriteLine($"[PageAdvanced] 条件: Field={c.Field}, Value={c.Value}, Compare={c.Compare}");
             }
         }
+        long _orgId = input.Conditions.Find(t => t.Field.Trim() == "orgid")?.Value.ParseToLong() ?? 0;
+        var orgList = await _sysOrgService.GetChildIdListWithSelfById(_orgId);
+        input.Conditions = input.Conditions.Where(t => t.Field.Trim() != "orgid").ToList();
 
         var query = _sysUserRep.AsQueryable()
             .LeftJoin<SysOrg>((u, a) => u.OrgId == a.Id)
             .LeftJoin<SysPos>((u, a, b) => u.PosId == b.Id)
+            .WhereIF(_orgId > 0, u => orgList.Contains(u.OrgId))
             .Where(u => u.AccountType != AccountTypeEnum.SuperAdmin)
             .WhereIF(!_userManager.SuperAdmin, u => u.AccountType != AccountTypeEnum.SysAdmin);
 

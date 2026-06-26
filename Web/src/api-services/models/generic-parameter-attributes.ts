@@ -25,6 +25,7 @@ export enum GenericParameterAttributes {
     NUMBER_4 = 4,
     NUMBER_8 = 8,
     NUMBER_16 = 16,
-    NUMBER_28 = 28
+    NUMBER_28 = 28,
+    NUMBER_32 = 32
 }
 

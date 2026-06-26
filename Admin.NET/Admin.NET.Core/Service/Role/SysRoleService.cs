@@ -1,8 +1,11 @@
-﻿// Admin.NET 项目的版权、商标、专利和其他相关权利均受相应法律法规的保护。使用本项目应遵守相关法律法规和许可证的要求。
+// Admin.NET 项目的版权、商标、专利和其他相关权利均受相应法律法规的保护。使用本项目应遵守相关法律法规和许可证的要求。
 //
 // 本项目主要遵循 MIT 许可证和 Apache 许可证（版本 2.0）进行分发和使用。许可证位于源代码树根目录中的 LICENSE-MIT 和 LICENSE-APACHE 文件。
 //
 // 不得利用本项目从事危害国家安全、扰乱社会秩序、侵犯他人合法权益等法律法规禁止的活动！任何基于本项目二次开发而产生的一切法律纠纷和责任，我们不承担任何责任！
+
+using Admin.NET.Core.Utils.AdvancedQuery;
+using Admin.NET.Core.Utils.AdvancedQuery.Models;
 
 namespace Admin.NET.Core.Service;
 
@@ -72,6 +75,30 @@ public class SysRoleService : IDynamicApiController, ITransient
             .WhereIF(!_userManager.SuperAdmin && !_userManager.SysAdmin, u => u.CreateUserId == _userManager.UserId || roleIdList.Contains(u.Id)) // 若非超管且非系统管理员，则只显示自己创建和已拥有的角色
             .Where(u => u.Status != StatusEnum.Disable) // 非禁用的
             .OrderBy(u => new { u.OrderNo, u.Id }).Select<RoleOutput>().ToListAsync();
+    }
+
+    /// <summary>
+    /// 获取角色分页列表（高级查询） 🔖
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [DisplayName("获取角色分页列表（高级查询）")]
+    public virtual async Task<SqlSugarPagedList<SysRole>> PageAdvanced(PageAdvancedInput input)
+    {
+        // 当前用户已拥有的角色集合
+        var roleIdList = _userManager.SuperAdmin ? new List<long>() : await _sysUserRoleService.GetUserRoleIdList(_userManager.UserId);
+
+        var query = _sysRoleRep.AsQueryable()
+            .WhereIF(_userManager.SuperAdmin && input.Conditions.Any(t => t.Field.Trim() == "tenantId"), u => u.TenantId == input.Conditions.First(t => t.Field.Trim() == "tenantId").Value.ParseToLong())
+            .WhereIF(!_userManager.SuperAdmin, u => u.TenantId == _userManager.TenantId)
+            .WhereIF(!_userManager.SuperAdmin && !_userManager.SysAdmin, u => u.CreateUserId == _userManager.UserId || roleIdList.Contains(u.Id))
+            .ApplyKeywordSearch(input.KeywordFields, input.Keyword)
+            .ApplyAdvancedQuery(input.Conditions)
+            .OrderBy(u => new { u.OrderNo, u.Id });
+
+
+
+        return await query.ToPagedListAsync(input.Page, input.PageSize);
     }
 
     /// <summary>

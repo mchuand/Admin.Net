@@ -1,5 +1,5 @@
 <template>
-	<div class="sys-role-container">
+	<div class="sys-editRole-container">
 		<el-dialog v-model="state.isShowDialog" draggable :close-on-click-modal="false">
 			<template #header>
 				<div style="color: #fff">

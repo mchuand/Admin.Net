@@ -1,6 +1,5 @@
-using System.ComponentModel;
 
-namespace Admin.NET.Core.Utils.AdvancedQuery.Enum;
+namespace Admin.NET.Core;
 
 /// <summary>
 /// 查询比对方式枚举
