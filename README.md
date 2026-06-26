@@ -109,12 +109,6 @@ Admin.NET 是基于 .NET6 (Furion/SqlSugar) 实现的通用权限开发框架，
     </tr>
 </table>
 
-## 🎀捐赠支持
-```
-如果对您有帮助，请点击右上角⭐Star关注或扫码捐赠，感谢支持开源！
-```
-<img src="https://gitee.com/zuohuaijun/Admin.NET/raw/next/doc/img/pay.png"/>
-
 ## 💐特别鸣谢
 - 👉 Furion：[https://gitee.com/dotnetchina/Furion](https://gitee.com/dotnetchina/Furion)
 - 👉 vue-next-admin：[https://lyt-top.gitee.io/vue-next-admin-doc-preview/](https://lyt-top.gitee.io/vue-next-admin-doc-preview/)
