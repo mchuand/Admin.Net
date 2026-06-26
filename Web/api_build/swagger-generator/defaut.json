@@ -1,0 +1,14 @@
+{
+  "apiurl": "http://localhost:5005/swagger/Default/swagger.json",
+  "outPath": "./../../src/api-services",
+  "Delete": [
+    ".swagger-codegen",
+    ".gitignore",
+    ".npmignore",
+    ".swagger-codegen-ignore",
+    "git_push.sh",
+    "package.json",
+    "README.md",
+    "tsconfig.json"
+  ]
+}

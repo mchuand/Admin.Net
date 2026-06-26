@@ -1,0 +1,24 @@
+{
+  "name": "swagger-client-generator",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "package:mac": "pkg index.js --targets node18-macos-arm64 --output ./dist/swagger-generator",
+    "package:win": "pkg index.js --targets node18-win-x64 --output ./dist/swagger-generator.exe",
+    "package:all": "npm run package:mac && npm run package:win"
+  },
+  "bin": "./index.js",
+  "pkg": {
+    "assets": [
+      "node_modules/adm-zip/**/*",
+      "node_modules/axios/**/*"
+    ]
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "axios": "^1.11.0"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
+}
