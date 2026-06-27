@@ -14,7 +14,7 @@
 
 import { QueryCompareEnum } from './query-compare-enum';
  /**
- * 查询条件项  表示单个查询条件，包含字段名、字段值和比对方式
+ * 查询条件项 表示单个查询条件，包含字段名、字段值和比对方式
  *
  * @export
  * @interface QueryConditionItem
@@ -22,7 +22,7 @@ import { QueryCompareEnum } from './query-compare-enum';
 export interface QueryConditionItem {
 
     /**
-     * 字段名  要查询的实体属性名称，支持自动识别所属表
+     * 字段名 要查询的实体属性名称，支持自动识别所属表
      *
      * @type {string}
      * @memberof QueryConditionItem
@@ -30,7 +30,7 @@ export interface QueryConditionItem {
     field?: string | null;
 
     /**
-     * 查询值  比对的值，支持基本类型、数组（用于 Between 和 In 查询）
+     * 查询值 比对的值，支持基本类型、数组（用于 Between 和 In 查询）
      *
      * @type {any}
      * @memberof QueryConditionItem

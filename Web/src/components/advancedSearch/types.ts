@@ -31,7 +31,8 @@ export interface SearchField {
 	options?: { label: string; value: any }[];
 	show?: boolean;
 	defaultValue?: any;
-	compare?: CompareEnum; // 默认比对方式
+	compare?: CompareEnum;
+	required?: boolean;
 }
 
 export interface SettingField {

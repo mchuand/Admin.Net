@@ -1,47 +1,16 @@
 <template>
-	<div class="sys-oplog-container" v-loading="state.loading">
-		<el-card shadow="hover" :body-style="{ paddingBottom: '0' }">
-			<el-form :model="state.queryParams" ref="queryForm" :inline="true">
-				<el-form-item label="租户" v-if="userStore.userInfos.accountType == 999">
-					<el-select v-model="state.queryParams.tenantId" placeholder="租户" style="width: 100%">
-						<el-option :value="item.value" :label="`${item.label} (${item.host})`" v-for="(item, index) in state.tenantList" :key="index" />
-					</el-select>
-				</el-form-item>
-				<el-form-item label="开始时间">
-					<el-date-picker v-model="state.queryParams.startTime" type="datetime" placeholder="开始时间" value-format="YYYY-MM-DD HH:mm:ss" :shortcuts="shortcuts" />
-				</el-form-item>
-				<el-form-item label="结束时间">
-					<el-date-picker v-model="state.queryParams.endTime" type="datetime" placeholder="结束时间" value-format="YYYY-MM-DD HH:mm:ss" :shortcuts="shortcuts" />
-				</el-form-item>
-				<el-form-item label="模块名称">
-					<el-input v-model="state.queryParams.controllerName" placeholder="模块名称" clearable />
-				</el-form-item>
-				<el-form-item label="方法名称">
-					<el-input v-model="state.queryParams.actionName" placeholder="方法名称" clearable />
-				</el-form-item>
-				<el-form-item label="账号名称">
-					<el-input v-model="state.queryParams.account" placeholder="账号名称" clearable />
-				</el-form-item>
-				<el-form-item label="耗时">
-					<el-input v-model="state.queryParams.elapsed" placeholder="耗时>?MS" clearable />
-				</el-form-item>
-				<el-form-item label="IP地址">
-					<el-input v-model="state.queryParams.remoteIp" placeholder="IP地址" clearable />
-				</el-form-item>
-				<el-form-item>
-					<el-button-group>
-						<el-button type="primary" icon="ele-Search" @click="handleQuery" v-auth="'sysOplog:page'"> 查询 </el-button>
-						<el-button icon="ele-Refresh" @click="resetQuery"> 重置 </el-button>
-					</el-button-group>
-				</el-form-item>
-				<el-form-item>
-					<el-button icon="ele-DeleteFilled" type="danger" @click="clearLog" v-auth="'sysOplog:clear'"> 清空 </el-button>
-					<el-button icon="ele-FolderOpened" @click="exportLog" v-auth="'sysOplog:export'"> 导出 </el-button>
-				</el-form-item>
-			</el-form>
-		</el-card>
+	<div class="sys-oplog-container">
+		<el-card class="full-table" header-class="card_header" shadow="hover" style="margin-top: 5px">
+			<template #header>
+				<!-- 按钮栏组件 -->
+				<ButtonBar mode="sysOplog" :buttonConfig="logButtonConfig" displayStyle="inline"
+					:onButtonClick="handleButtonClick" />
 
-		<el-card class="full-table" shadow="hover" style="margin-top: 5px">
+				<!-- 高级查询组件 -->
+				<AdvancedSearch ref="searchRef" :fields="searchFields" :keywordFields="keywordFields"
+					mode="sysOplog" :disableAutoQuery="true" @query="handleAdvancedQuery" @reset="handleAdvancedReset" />
+			</template>
+
 			<el-table :data="state.logData" @sort-change="sortChange" style="width: 100%" border :row-class-name="tableRowClassName">
 				<el-table-column type="index" label="序号" width="55" align="center" />
 				<el-table-column prop="controllerName" label="模块名称" min-width="120" header-align="center" show-overflow-tooltip />
@@ -49,8 +18,6 @@
 				<el-table-column prop="actionName" label="方法名称" width="150" header-align="center" show-overflow-tooltip />
 				<el-table-column prop="httpMethod" label="请求方式" width="90" align="center" show-overflow-tooltip />
 				<el-table-column prop="requestUrl" label="请求地址" width="300" header-align="center" show-overflow-tooltip />
-				<!-- <el-table-column prop="requestParam" label="请求参数" show-overflow-tooltip />
-				<el-table-column prop="returnResult" label="返回结果" show-overflow-tooltip /> -->
 				<el-table-column prop="logLevel" label="级别" width="70" align="center" show-overflow-tooltip>
 					<template #default="scope">
 						<el-tag v-if="scope.row.logLevel === 1">调试</el-tag>
@@ -78,8 +45,6 @@
 					</template>
 				</el-table-column>
 				<el-table-column prop="elapsed" label="耗时(ms)" width="90" align="center" show-overflow-tooltip />
-				<!-- <el-table-column prop="exception" label="异常对象" width="150" show-overflow-tooltip /> -->
-				<!-- <el-table-column prop="message" label="日志消息" width="160" fixed="right" show-overflow-tooltip /> -->
 				<el-table-column prop="logDateTime" label="日志时间" width="160" align="center" fixed="right" show-overflow-tooltip />
 				<el-table-column label="操作" width="80" align="center" fixed="right" show-overflow-tooltip>
 					<template #default="scope">
@@ -112,36 +77,33 @@
 </template>
 
 <script lang="ts" setup name="sysOpLog">
-import { onMounted, reactive } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { downloadByData, getFileName } from '/@/utils/download';
-
 import { getAPI } from '/@/utils/axios-utils';
+import { SysLogOpApi, SysTenantApi } from '/@/api-services/api';
 import { SysLogOp } from '/@/api-services/models';
 import { useUserInfo } from "/@/stores/userInfo";
-import { SysLogOpApi, SysTenantApi } from '/@/api-services/api';
+import ButtonBar from '/@/components/buttonBar/index.vue';
+import AdvancedSearch from '/@/components/advancedSearch/index.vue';
+import type { SearchField, QueryCondition } from '/@/components/advancedSearch/types';
 
 const userStore = useUserInfo();
+const searchRef = ref();
 const state = reactive({
 	loading: false,
 	loadingDetail: false,
 	tenantList: [] as Array<any>,
 	queryParams: {
-		tenantId: undefined,
-		startTime: undefined,
-		endTime: undefined,
-		controllerName: undefined,
-		actionName: undefined,
-		account: undefined,
-		elapsed: undefined,
-		remoteIp: undefined,
+		tenantId: undefined as number | undefined,
 	},
+	advancedConditions: [] as QueryCondition[],
 	tableParams: {
 		page: 1,
 		pageSize: 50,
-		field: 'createTime', // 默认的排序字段
-		order: 'descending', // 排序方向
-		descStr: 'descending', // 降序排序的关键字符
+		field: 'createTime',
+		order: 'descending',
+		descStr: 'descending',
 		total: 0 as any,
 	},
 	logData: [] as Array<SysLogOp>,
@@ -149,77 +111,109 @@ const state = reactive({
 	content: '',
 });
 
+// 搜索字段配置
+const searchFields: SearchField[] = [
+	{ label: '租户', prop: 'tenantId', type: 'select', options: [], visible: userStore.userInfos.accountType == 999 },
+	{ label: '日志时间', prop: 'logDateTime', type: 'datetimeRange' },
+	{ label: '模块名称', prop: 'controllerName', type: 'string' },
+	{ label: '方法名称', prop: 'actionName', type: 'string' },
+	{ label: '账号名称', prop: 'account', type: 'string' },
+	{ label: '耗时', prop: 'elapsed', type: 'number' },
+	{ label: 'IP地址', prop: 'remoteIp', type: 'string' },
+];
+
+// 关键字搜索字段列表
+const keywordFields = ['controllerName', 'actionName', 'account', 'displayTitle', 'remoteIp'];
+
+// 钮栏配置
+const logButtonConfig = {
+	tool: {
+		type: 'group' as const,
+		childs: {
+			clear: { type: 'button' as const, label: '清空', icon: 'ele-DeleteFilled', color: 'danger' as const },
+			export: { type: 'button' as const, label: '导出', icon: 'ele-FolderOpened', color: 'primary' as const },
+		}
+	},
+};
+
+// 钮栏点击事件
+const handleButtonClick = (key: string) => {
+	switch (key) {
+		case 'clear': clearLog(); break;
+		case 'export': exportLog(); break;
+	}
+};
+
 onMounted(async () => {
 	if (userStore.userInfos.accountType == 999) {
 		state.tenantList = await getAPI(SysTenantApi).apiSysTenantListGet().then(res => res.data.result ?? []);
-		state.queryParams.tenantId = state.tenantList[0].value;
+		
+		const tenantField = searchFields.find(f => f.prop === 'tenantId');
+		if (tenantField) {
+			tenantField.options = state.tenantList.map(item => ({
+				label: `${item.label} (${item.host})`,
+				value: item.value
+			}));
+		}
+		
+		if (state.tenantList.length > 0) {
+			state.queryParams.tenantId = state.tenantList[0].value;
+			if (searchRef.value) {
+				searchRef.value.setQueryParams({ tenantId: state.tenantList[0].value });
+			}
+		}
 	}
-	handleQuery();
+	await handleAdvancedQuery([]);
 });
 
-// 查询操作
-const handleQuery = async () => {
-	if (state.queryParams.startTime == null) state.queryParams.startTime = undefined;
-	if (state.queryParams.endTime == null) state.queryParams.endTime = undefined;
-	if (state.queryParams.controllerName == null) state.queryParams.controllerName = undefined;
-	if (state.queryParams.actionName == null) state.queryParams.actionName = undefined;
-	if (state.queryParams.account == null) state.queryParams.account = undefined;
-	if (state.queryParams.elapsed == null) state.queryParams.elapsed = undefined;
-	if (state.queryParams.remoteIp == null) state.queryParams.remoteIp = undefined;
-
+// 高级查询（所有查询统一走此方法）
+const handleAdvancedQuery = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = conditions;
 	state.loading = true;
-	let params = Object.assign(state.queryParams, state.tableParams);
-	var res = await getAPI(SysLogOpApi).apiSysLogOpPagePost(params);
-	state.logData = res.data.result?.items ?? [];
-	state.tableParams.total = res.data.result?.total;
+
+	const keywordValue = searchRef.value?.getKeyword?.() || '';
+
+	let params = {
+		page: state.tableParams.page,
+		pageSize: state.tableParams.pageSize,
+		tenantId: state.queryParams.tenantId,
+		keyword: keywordValue,
+		keywordFields: keywordFields,
+		conditions: conditions
+	};
+
+	try {
+		let res = await getAPI(SysLogOpApi).apiSysLogOpPageAdvancedPost(params as any);
+		state.logData = res.data.result?.items ?? [];
+		state.tableParams.total = res.data.result?.total;
+	} catch (error) {
+		console.error('查询失败:', error);
+	}
 	state.loading = false;
 };
 
-// 重置操作
-const resetQuery = () => {
-	state.queryParams.startTime = undefined;
-	state.queryParams.endTime = undefined;
-	state.queryParams.controllerName = undefined;
-	state.queryParams.actionName = undefined;
-	state.queryParams.account = undefined;
-	state.queryParams.elapsed = undefined;
-	state.queryParams.remoteIp = undefined;
-	handleQuery();
+// 高级查询重置
+const handleAdvancedReset = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = [];
+	await handleAdvancedQuery([]);
 };
 
-// 清空日志
 const clearLog = async () => {
 	state.loading = true;
 	await getAPI(SysLogOpApi).apiSysLogOpClearPost();
 	state.loading = false;
-
 	ElMessage.success('清空成功');
-	handleQuery();
+	await handleAdvancedQuery([]);
 };
 
-// 导出日志
 const exportLog = async () => {
 	state.loading = true;
-	var res = await getAPI(SysLogOpApi).apiSysLogOpExportPost(state.queryParams, { responseType: 'blob' });
+	var res = await getAPI(SysLogOpApi).apiSysLogOpExportPost({}, { responseType: 'blob' });
 	state.loading = false;
-
 	var fileName = getFileName(res.headers);
 	downloadByData(res.data as any, fileName);
 };
 
-// 改变页面容量
-const handleSizeChange = (val: number) => {
-	state.tableParams.pageSize = val;
-	handleQuery();
-};
-
-// 改变页码序号
-const handleCurrentChange = (val: number) => {
-	state.tableParams.page = val;
-	handleQuery();
-};
-
-// 查看详情
 const viewDetail = async (row: any) => {
 	state.content = '';
 	state.dialogVisible = true;
@@ -230,53 +224,55 @@ const viewDetail = async (row: any) => {
 	state.loadingDetail = false;
 };
 
-// 设置行颜色
 const tableRowClassName = (row: any) => {
 	return row.row.exception != null ? 'warning-row' : '';
 };
 
-const shortcuts = [
-	{
-		text: '今天',
-		value: new Date(),
-	},
-	{
-		text: '昨天',
-		value: () => {
-			const date = new Date();
-			date.setTime(date.getTime() - 3600 * 1000 * 24);
-			return date;
-		},
-	},
-	{
-		text: '上周',
-		value: () => {
-			const date = new Date();
-			date.setTime(date.getTime() - 3600 * 1000 * 24 * 7);
-			return date;
-		},
-	},
-];
-
-// 列排序
 const sortChange = (column: any) => {
 	state.tableParams.field = column.prop;
 	state.tableParams.order = column.order;
-	handleQuery();
+	handleAdvancedQuery(state.advancedConditions);
+};
+
+// 改变页面容量
+const handleSizeChange = async (val: number) => {
+	state.tableParams.pageSize = val;
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
+};
+
+// 改变页码序号
+const handleCurrentChange = async (val: number) => {
+	state.tableParams.page = val;
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
 };
 </script>
 
-<style lang="scss" scoped>
-.el-popper {
-	max-width: 60%;
+<style scoped lang="scss">
+.sys-oplog-container {
+	height: 100%;
 }
+
+:deep(.card_header) {
+	padding: 0 3px 3px 3px;
+}
+
 pre {
 	white-space: break-spaces;
 	line-height: 20px;
 }
+
 .el-table .warning-row {
 	--el-table-tr-bg-color: var(--el-color-warning-light-9);
 }
+
 .el-table .success-row {
 	--el-table-tr-bg-color: var(--el-color-success-light-9);
 }

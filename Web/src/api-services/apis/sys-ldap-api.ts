@@ -227,13 +227,13 @@ export const SysLdapApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @summary 获取系统域登录配置分页列表 🔖
-         * @param {SysLdapInput} [body] 
+         * @summary 获取系统域登录配置分页列表（高级查询） 🔖
+         * @param {PageAdvancedInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiSysLdapPagePost: async (body?: SysLdapInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/sysLdap/page`;
+        apiSysLdapPageAdvancedPost: async (body?: PageAdvancedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/sysLdap/pageAdvanced`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, 'https://example.com');
             let baseOptions;
@@ -275,13 +275,13 @@ export const SysLdapApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @summary 获取系统域登录配置分页列表（高级查询） 🔖
-         * @param {PageAdvancedInput} [body] 
+         * @summary 获取系统域登录配置分页列表 🔖
+         * @param {SysLdapInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiSysLdapPageAdvancedPost: async (body?: PageAdvancedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/sysLdap/pageAdvanced`;
+        apiSysLdapPagePost: async (body?: SysLdapInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/sysLdap/page`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, 'https://example.com');
             let baseOptions;
@@ -531,20 +531,6 @@ export const SysLdapApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary 获取系统域登录配置分页列表 🔖
-         * @param {SysLdapInput} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiSysLdapPagePost(body?: SysLdapInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLdap>>> {
-            const localVarAxiosArgs = await SysLdapApiAxiosParamCreator(configuration).apiSysLdapPagePost(body, options);
-            return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
-                const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
-                return axios.request(axiosRequestArgs);
-            };
-        },
-        /**
-         * 
          * @summary 获取系统域登录配置分页列表（高级查询） 🔖
          * @param {PageAdvancedInput} [body] 
          * @param {*} [options] Override http request option.
@@ -552,6 +538,20 @@ export const SysLdapApiFp = function(configuration?: Configuration) {
          */
         async apiSysLdapPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLdap>>> {
             const localVarAxiosArgs = await SysLdapApiAxiosParamCreator(configuration).apiSysLdapPageAdvancedPost(body, options);
+            return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
+                const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
+                return axios.request(axiosRequestArgs);
+            };
+        },
+        /**
+         * 
+         * @summary 获取系统域登录配置分页列表 🔖
+         * @param {SysLdapInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysLdapPagePost(body?: SysLdapInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLdap>>> {
+            const localVarAxiosArgs = await SysLdapApiAxiosParamCreator(configuration).apiSysLdapPagePost(body, options);
             return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
                 const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
                 return axios.request(axiosRequestArgs);
@@ -649,16 +649,6 @@ export const SysLdapApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @summary 获取系统域登录配置分页列表 🔖
-         * @param {SysLdapInput} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiSysLdapPagePost(body?: SysLdapInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLdap>> {
-            return SysLdapApiFp(configuration).apiSysLdapPagePost(body, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
          * @summary 获取系统域登录配置分页列表（高级查询） 🔖
          * @param {PageAdvancedInput} [body] 
          * @param {*} [options] Override http request option.
@@ -666,6 +656,16 @@ export const SysLdapApiFactory = function (configuration?: Configuration, basePa
          */
         async apiSysLdapPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLdap>> {
             return SysLdapApiFp(configuration).apiSysLdapPageAdvancedPost(body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary 获取系统域登录配置分页列表 🔖
+         * @param {SysLdapInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysLdapPagePost(body?: SysLdapInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLdap>> {
+            return SysLdapApiFp(configuration).apiSysLdapPagePost(body, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -752,17 +752,6 @@ export class SysLdapApi extends BaseAPI {
     }
     /**
      * 
-     * @summary 获取系统域登录配置分页列表 🔖
-     * @param {SysLdapInput} [body] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof SysLdapApi
-     */
-    public async apiSysLdapPagePost(body?: SysLdapInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLdap>> {
-        return SysLdapApiFp(this.configuration).apiSysLdapPagePost(body, options).then((request) => request(this.axios, this.basePath));
-    }
-    /**
-     * 
      * @summary 获取系统域登录配置分页列表（高级查询） 🔖
      * @param {PageAdvancedInput} [body] 
      * @param {*} [options] Override http request option.
@@ -771,6 +760,17 @@ export class SysLdapApi extends BaseAPI {
      */
     public async apiSysLdapPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLdap>> {
         return SysLdapApiFp(this.configuration).apiSysLdapPageAdvancedPost(body, options).then((request) => request(this.axios, this.basePath));
+    }
+    /**
+     * 
+     * @summary 获取系统域登录配置分页列表 🔖
+     * @param {SysLdapInput} [body] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SysLdapApi
+     */
+    public async apiSysLdapPagePost(body?: SysLdapInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLdap>> {
+        return SysLdapApiFp(this.configuration).apiSysLdapPagePost(body, options).then((request) => request(this.axios, this.basePath));
     }
     /**
      * 

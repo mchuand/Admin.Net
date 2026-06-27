@@ -1,28 +1,16 @@
 <template>
-	<div class="sys-tenant-container">
-		<el-card shadow="hover" :body-style="{ paddingBottom: '0' }">
-			<el-form :model="state.queryParams" ref="queryForm" :inline="true">
-				<el-form-item label="租户名称">
-					<el-input v-model="state.queryParams.name" placeholder="租户名称" clearable />
-				</el-form-item>
-				<el-form-item label="联系电话">
-					<el-input v-model="state.queryParams.phone" placeholder="联系电话" clearable />
-				</el-form-item>
-				<el-form-item>
-					<el-button-group>
-						<el-button type="primary" icon="ele-Search" @click="handleQuery" v-auth="'sysTenant:page'"> 查询
-						</el-button>
-						<el-button icon="ele-Refresh" @click="resetQuery"> 重置 </el-button>
-					</el-button-group>
-				</el-form-item>
-				<el-form-item>
-					<el-button type="primary" icon="ele-Plus" @click="openAddTenant" v-auth="'sysTenant:add'"> 新增
-					</el-button>
-				</el-form-item>
-			</el-form>
-		</el-card>
+	<div>
+		<el-card class="full-table sys-tenant-card" header-class="card_header" shadow="hover" style="margin-top: 5px">
+			<template #header>
+				<!-- 按钮栏组件 -->
+				<ButtonBar mode="sysTenant" :buttonConfig="tenantButtonConfig" displayStyle="inline"
+					:onButtonClick="handleButtonClick" />
 
-		<el-card class="full-table" shadow="hover" style="margin-top: 5px">
+				<!-- 高级查询组件 -->
+				<AdvancedSearch ref="searchRef" :fields="searchFields" :keywordFields="keywordFields"
+					mode="sysTenant" :disableAutoQuery="true" @query="handleAdvancedQuery" @reset="handleAdvancedReset" />
+			</template>
+
 			<el-table :data="state.tenantData" style="width: 100%" v-loading="state.loading" border>
 				<el-table-column type="index" label="序号" width="55" align="center" fixed />
 				<el-table-column prop="logo" label="图标" width="55" align="center" show-overflow-tooltip>
@@ -46,7 +34,6 @@
 				<el-table-column prop="adminAccount" label="租管账号" align="center" width="120" show-overflow-tooltip />
 				<el-table-column prop="phone" label="电话" width="120" align="center" show-overflow-tooltip />
 				<el-table-column prop="host" label="域名" width="150" show-overflow-tooltip />
-				<!-- <el-table-column prop="email" label="邮箱" show-overflow-tooltip /> -->
 				<el-table-column prop="tenantType" label="租户类型" width="100" align="center" show-overflow-tooltip>
 					<template #default="scope">
 						<g-sys-dict v-model="scope.row.tenantType" code="TenantTypeEnum" />
@@ -72,7 +59,7 @@
 						<el-tag v-else-if="scope.row.dbType === 9"> Access </el-tag>
 						<el-tag v-if="scope.row.dbType === 10"> OpenGauss </el-tag>
 						<el-tag v-else-if="scope.row.dbType === 11"> QuestDB </el-tag>
-						<el-tag v-else-if="scope.row.dbType === 12"> HG </el-tag>
+						<el-tag v-if="scope.row.dbType === 12"> HG </el-tag>
 						<el-tag v-else-if="scope.row.dbType === 13"> ClickHouse </el-tag>
 						<el-tag v-else-if="scope.row.dbType === 14"> GBase </el-tag>
 						<el-tag v-else-if="scope.row.dbType === 15"> Odbc </el-tag>
@@ -87,7 +74,6 @@
 						<el-tag v-else-if="scope.row.dbType === 900"> Custom </el-tag>
 					</template>
 				</el-table-column>
-				<!-- <el-table-column prop="configId" label="数据库标识" show-overflow-tooltip /> -->
 				<el-table-column prop="connection" label="数据库连接" min-width="300" header-align="center"
 					show-overflow-tooltip />
 				<el-table-column prop="slaveConnections" label="从库连接" min-width="300" header-align="center"
@@ -133,17 +119,20 @@
 				layout="total, sizes, prev, pager, next, jumper" />
 		</el-card>
 
-		<EditTenant ref="editTenantRef" :title="state.editTenantTitle" @handleQuery="handleQuery" />
+		<EditTenant ref="editTenantRef" :title="state.editTenantTitle" @handleQuery="handleAdvancedQuery([])" />
 		<GrantMenu ref="grantMenuRef" />
 	</div>
 </template>
 
 <script lang="ts" setup name="sysTenant">
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, shallowRef } from 'vue';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import EditTenant from '/@/views/system/tenant/component/editTenant.vue';
 import GrantMenu from '/@/views/system/tenant/component/grantMenu.vue';
 import ModifyRecord from '/@/components/table/modifyRecord.vue';
+import ButtonBar from '/@/components/buttonBar/index.vue';
+import AdvancedSearch from '/@/components/advancedSearch/index.vue';
+import type { SearchField, QueryCondition } from '/@/components/advancedSearch/types';
 import { getAPI } from '/@/utils/axios-utils';
 import { SysTenantApi } from '/@/api-services/api';
 import { TenantOutput } from '/@/api-services/models';
@@ -152,13 +141,13 @@ import GSysDict from "/@/components/sysDict/sysDict.vue";
 
 const editTenantRef = ref<InstanceType<typeof EditTenant>>();
 const grantMenuRef = ref<InstanceType<typeof GrantMenu>>();
+const searchRef = ref();
+const selectRows = shallowRef<any[]>([]);
+
 const state = reactive({
 	loading: false,
 	tenantData: [] as Array<TenantOutput>,
-	queryParams: {
-		name: undefined,
-		phone: undefined,
-	},
+	advancedConditions: [] as QueryCondition[],
 	tableParams: {
 		page: 1,
 		pageSize: 50,
@@ -167,18 +156,67 @@ const state = reactive({
 	editTenantTitle: '',
 });
 
+// 搜索字段配置
+const searchFields: SearchField[] = [
+	{ label: '租户名称', prop: 'name', type: 'string' },
+	{ label: '联系电话', prop: 'phone', type: 'string' },
+	{ label: '域名', prop: 'host', type: 'string' },
+	{ label: '租管账号', prop: 'adminAccount', type: 'string' },
+];
+
+// 关键字搜索字段列表
+const keywordFields = ['name', 'phone', 'host', 'adminAccount'];
+
+// 按钮栏配置
+const tenantButtonConfig = {
+	base: {
+		type: 'group' as const,
+		childs: {
+			add: { type: 'button' as const, label: '新增', icon: 'ele-Plus', color: 'primary' as const },
+		}
+	},
+};
+
+// 按钮栏点击事件
+const handleButtonClick = (key: string) => {
+	switch (key) {
+		case 'add': openAddTenant(); break;
+	}
+};
+
 onMounted(async () => {
-	handleQuery();
+	await handleAdvancedQuery([]);
 });
 
-// 查询操作
-const handleQuery = async () => {
+// 高级查询（所有查询统一走此方法）
+const handleAdvancedQuery = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = conditions;
 	state.loading = true;
-	let params = Object.assign(state.queryParams, state.tableParams);
-	var res = await getAPI(SysTenantApi).apiSysTenantPagePost(params);
-	state.tenantData = res.data.result?.items ?? [];
-	state.tableParams.total = res.data.result?.total;
+
+	const keywordValue = searchRef.value?.getKeyword?.() || '';
+
+	let params = {
+		page: state.tableParams.page,
+		pageSize: state.tableParams.pageSize,
+		keyword: keywordValue,
+		keywordFields: keywordFields,
+		conditions: conditions
+	};
+
+	try {
+		let res = await getAPI(SysTenantApi).apiSysTenantPageAdvancedPost(params as any);
+		state.tenantData = res.data.result?.items ?? [];
+		state.tableParams.total = res.data.result?.total;
+	} catch (error) {
+		console.error('查询失败:', error);
+	}
 	state.loading = false;
+};
+
+// 高级查询重置
+const handleAdvancedReset = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = [];
+	await handleAdvancedQuery([]);
 };
 
 // 进入租管端
@@ -188,11 +226,11 @@ const goTenant = (row: any) => {
 		cancelButtonText: '取消',
 		type: 'warning',
 	}).then(() =>
-			getAPI(SysTenantApi)
+		getAPI(SysTenantApi)
 			.apiSysTenantGoTenantPost({ id: row.id })
 			.then(res => reLoadLoginAccessToken(res.data.result))
 	);
-}
+};
 
 // 切换租户
 const changeTenant = (row: any) => {
@@ -201,11 +239,11 @@ const changeTenant = (row: any) => {
 		cancelButtonText: '取消',
 		type: 'warning',
 	}).then(() =>
-			getAPI(SysTenantApi)
+		getAPI(SysTenantApi)
 			.apiSysTenantChangeTenantPost({ id: row.id })
 			.then(res => reLoadLoginAccessToken(res.data.result))
 	);
-}
+};
 
 const syncGrantMenu = (row: any) => {
 	ElMessageBox.confirm(`确定要将同步【${row.name}】的授权数据?`, '提示', {
@@ -216,13 +254,6 @@ const syncGrantMenu = (row: any) => {
 		await getAPI(SysTenantApi).apiSysTenantSyncGrantMenuPost({ id: row.id });
 		ElMessage.success('同步授权成功');
 	});
-}
-
-// 重置操作
-const resetQuery = () => {
-	state.queryParams.name = undefined;
-	state.queryParams.phone = undefined;
-	handleQuery();
 };
 
 // 打开新增页面
@@ -268,22 +299,30 @@ const delTenant = (row: any) => {
 	})
 		.then(async () => {
 			await getAPI(SysTenantApi).apiSysTenantDeletePost({ id: row.id });
-			handleQuery();
+			await handleAdvancedQuery([]);
 			ElMessage.success('删除成功');
 		})
 		.catch(() => { });
 };
 
 // 改变页面容量
-const handleSizeChange = (val: number) => {
+const handleSizeChange = async (val: number) => {
 	state.tableParams.pageSize = val;
-	handleQuery();
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
 };
 
 // 改变页码序号
-const handleCurrentChange = (val: number) => {
+const handleCurrentChange = async (val: number) => {
 	state.tableParams.page = val;
-	handleQuery();
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
 };
 
 // 创建租户库
@@ -312,3 +351,13 @@ const changeStatus = (row: any) => {
 		});
 };
 </script>
+
+<style scoped lang="scss">
+.sys-tenant-card {
+	height: 100%;
+}
+
+:deep(.card_header) {
+	padding: 0 3px 3px 3px;
+}
+</style>

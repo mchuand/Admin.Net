@@ -21,7 +21,11 @@
 				</el-form-item>
 
 				<!-- 查询字段 -->
-				<el-form-item v-for="field in visibleFields" :key="field.prop" :label="field.label">
+				<el-form-item v-for="field in visibleFields" :key="field.prop">
+					<template #label>
+						<span>{{ field.label }}</span>
+						<span v-if="field.required" style="color: #f56c6c; margin-left: 2px;">*</span>
+					</template>
 					<!-- 字符串类型 -->
 					<el-input
 						v-if="field.type === 'string' || !field.type"
@@ -78,6 +82,28 @@
 						end-placeholder="结束"
 						value-format="YYYY-MM-DD"
 						style="width: 240px"
+					/>
+
+					<!-- 日期时间类型（带时分秒） -->
+					<el-date-picker
+						v-else-if="field.type === 'datetime'"
+						v-model="queryParams[field.prop]"
+						type="datetime"
+						:placeholder="field.placeholder || `请选择`"
+						value-format="YYYY-MM-DD HH:mm:ss"
+						style="width: 180px"
+					/>
+
+					<!-- 日期时间范围类型（带时分秒） -->
+					<el-date-picker
+						v-else-if="field.type === 'datetimeRange'"
+						v-model="queryParams[field.prop]"
+						type="datetimerange"
+						range-separator="~"
+						start-placeholder="开始"
+						end-placeholder="结束"
+						value-format="YYYY-MM-DD HH:mm:ss"
+						style="width: 340px"
 					/>
 
 					<!-- 字典单选 -->
@@ -196,6 +222,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import { CompareEnum } from './types';
 import type { QueryCondition, SearchField, SettingField } from './types';
 
@@ -379,8 +406,10 @@ const getDefaultCompare = (field: SearchField): CompareEnum => {
 		case 'numberRange':
 			return CompareEnum.Between;
 		case 'date':
+		case 'datetime':
 			return CompareEnum.Eq;
 		case 'dateRange':
+		case 'datetimeRange':
 			return CompareEnum.Between;
 		case 'dic':
 		case 'select':
@@ -423,7 +452,7 @@ const buildQueryConditions = (): QueryCondition[] => {
 					compare: CompareEnum.Le,
 				});
 			}
-		} else if (field.type === 'dateRange') {
+		} else if (field.type === 'dateRange' || field.type === 'datetimeRange') {
 			if (value && Array.isArray(value) && value.length === 2) {
 				conditions.push({
 					field: field.prop,
@@ -461,7 +490,7 @@ const initParams = () => {
 		if (field.type === 'numberRange') {
 			queryParams[`${field.prop}Start`] = cachedParams?.[`${field.prop}Start`] ?? field.defaultValue?.[0] ?? undefined;
 			queryParams[`${field.prop}End`] = cachedParams?.[`${field.prop}End`] ?? field.defaultValue?.[1] ?? undefined;
-		} else if (field.type === 'dateRange' || field.type === 'dicRange') {
+		} else if (field.type === 'dateRange' || field.type === 'dateTimeRange' || field.type === 'dicRange') {
 			queryParams[field.prop] = cachedParams?.[field.prop] ?? field.defaultValue ?? [];
 		} else {
 			queryParams[field.prop] = cachedParams?.[field.prop] ?? field.defaultValue ?? undefined;
@@ -573,6 +602,40 @@ const onDragEnd = () => {
 // 查询
 const handleQuery = () => {
 	console.log('handleQuery 被调用');
+
+	// 必填校验
+	const requiredFields = visibleFields.value.filter((f) => f.required);
+	const missingFields: string[] = [];
+
+	requiredFields.forEach((field) => {
+		const value = queryParams[field.prop];
+
+		if (field.type === 'numberRange') {
+			const startValue = queryParams[`${field.prop}Start`];
+			const endValue = queryParams[`${field.prop}End`];
+			if (startValue === undefined && endValue === undefined) {
+				missingFields.push(field.label);
+			}
+		} else if (field.type === 'dateRange') {
+			if (!value || !Array.isArray(value) || value.length < 2 || !value[0] || !value[1]) {
+				missingFields.push(field.label);
+			}
+		} else if (field.type === 'dicRange') {
+			if (!value || !Array.isArray(value) || value.length === 0) {
+				missingFields.push(field.label);
+			}
+		} else {
+			if (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
+				missingFields.push(field.label);
+			}
+		}
+	});
+
+	if (missingFields.length > 0) {
+		ElMessage.warning(`请填写必填字段：${missingFields.join('、')}`);
+		return;
+	}
+
 	const conditions = buildQueryConditions();
 	console.log('查询条件:', conditions);
 

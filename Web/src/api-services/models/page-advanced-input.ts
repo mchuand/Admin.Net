@@ -16,7 +16,7 @@ import { Filter } from './filter';
 import { QueryConditionItem } from './query-condition-item';
 import { Search } from './search';
  /**
- * 分页高级查询输入参数  继承自 BasePageInput，包含高级查询条件列表
+ * 分页高级查询输入参数 继承自 BasePageInput，包含高级查询条件列表
  *
  * @export
  * @interface PageAdvancedInput
@@ -76,7 +76,7 @@ export interface PageAdvancedInput {
     descStr?: string | null;
 
     /**
-     * 关键字  用于模糊搜索的关键字，可选
+     * 关键字 用于模糊搜索的关键字，可选
      *
      * @type {string}
      * @memberof PageAdvancedInput
@@ -84,7 +84,7 @@ export interface PageAdvancedInput {
     keyword?: string | null;
 
     /**
-     * 关键字匹配的字段列表  当设置了此字段时，会自动添加关键字模糊匹配条件
+     * 关键字匹配的字段列表 当设置了此字段时，会自动添加关键字模糊匹配条件
      *
      * @type {Array<string>}
      * @memberof PageAdvancedInput
@@ -92,7 +92,7 @@ export interface PageAdvancedInput {
     keywordFields?: Array<string> | null;
 
     /**
-     * 高级查询条件列表  多个条件之间为 AND 关系
+     * 高级查询条件列表 多个条件之间为 AND 关系
      *
      * @type {Array<QueryConditionItem>}
      * @memberof PageAdvancedInput
@@ -100,7 +100,7 @@ export interface PageAdvancedInput {
     conditions?: Array<QueryConditionItem> | null;
 
     /**
-     * 排序字段  要排序的字段名，可选
+     * 排序字段 要排序的字段名，可选
      *
      * @type {string}
      * @memberof PageAdvancedInput
@@ -108,7 +108,7 @@ export interface PageAdvancedInput {
     orderField?: string | null;
 
     /**
-     * 排序方式  desc：降序，asc：升序，默认降序
+     * 排序方式 desc：降序，asc：升序，默认降序
      *
      * @type {string}
      * @memberof PageAdvancedInput

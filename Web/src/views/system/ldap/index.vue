@@ -10,15 +10,6 @@
 				<!-- 高级查询组件 -->
 				<AdvancedSearch ref="searchRef" :fields="searchFields" :keywordFields="keywordFields"
 					mode="sysLdap" :disableAutoQuery="true" @query="handleAdvancedQuery" @reset="handleAdvancedReset" />
-
-				<!-- 租户选择（超级管理员） -->
-				<el-form v-if="userStore.userInfos.accountType == 999" :inline="true" style="margin-top: 5px">
-					<el-form-item label="租户">
-						<el-select v-model="state.queryParams.tenantId" placeholder="租户" style="width: 100%">
-							<el-option :value="item.value" :label="`${item.label} (${item.host})`" v-for="(item, index) in state.tenantList" :key="index" />
-						</el-select>
-					</el-form-item>
-				</el-form>
 			</template>
 
 			<el-table ref="tableRef" :data="state.tableData" style="width: 100%" v-loading="state.loading" border
@@ -72,7 +63,7 @@ const selectRows = shallowRef<any[]>([]);
 
 // 搜索字段配置
 const searchFields: SearchField[] = [
-	{ label: '关键字', prop: 'keyword', type: 'string' },
+	{ label: '租户', prop: 'tenantId', type: 'select', options: [], required: true },
 	{ label: '主机', prop: 'host', type: 'string' },
 ];
 
@@ -188,7 +179,21 @@ const handleBatchSyncOrg = () => {
 onMounted(async () => {
 	if (userStore.userInfos.accountType == 999) {
 		state.tenantList = await getAPI(SysTenantApi).apiSysTenantListGet().then(res => res.data.result ?? []);
-		state.queryParams.tenantId = state.tenantList[0].value;
+		
+		const tenantField = searchFields.find(f => f.prop === 'tenantId');
+		if (tenantField) {
+			tenantField.options = state.tenantList.map(item => ({
+				label: `${item.label} (${item.host})`,
+				value: item.value
+			}));
+		}
+		
+		if (state.tenantList.length > 0) {
+			state.queryParams.tenantId = state.tenantList[0].value;
+			if (searchRef.value) {
+				searchRef.value.setQueryParams({ tenantId: state.tenantList[0].value });
+			}
+		}
 	}
 	await handleAdvancedQuery([]);
 });
@@ -200,23 +205,16 @@ const handleAdvancedQuery = async (conditions: QueryCondition[]) => {
 
 	const keywordValue = searchRef.value?.getKeyword?.() || '';
 
-	// 从 conditions 中提取 host 字段的值
-	let hostValue: string | undefined = undefined;
-	const hostCondition = conditions.find((c) => c.field === 'host');
-	if (hostCondition) {
-		hostValue = hostCondition.value;
-	}
-
 	let params: any = {
 		page: state.tableParams.page,
 		pageSize: state.tableParams.pageSize,
-		tenantId: state.queryParams.tenantId,
 		keyword: keywordValue,
-		host: hostValue,
+		keywordFields: keywordFields,
+		conditions: conditions
 	};
 
 	try {
-		let res = await getAPI(SysLdapApi).apiSysLdapPagePost(params);
+		let res = await getAPI(SysLdapApi).apiSysLdapPageAdvancedPost(params);
 		state.tableData = res.data.result?.items ?? [];
 		state.tableParams.total = res.data.result?.total;
 	} catch (error) {
@@ -234,7 +232,8 @@ const handleAdvancedReset = async (conditions: QueryCondition[]) => {
 // 打开新增页面
 const openAddSysLdap = () => {
 	state.dialogTitle = '添加系统域登录信息配置';
-	editLdapRef.value?.openDialog({ tenantId: state.queryParams.tenantId });
+	const tenantId = searchRef.value?.getQueryParams?.().find((c: any) => c.field === 'tenantId')?.value ?? state.queryParams.tenantId;
+	editLdapRef.value?.openDialog({ tenantId });
 };
 
 // 打开编辑页面

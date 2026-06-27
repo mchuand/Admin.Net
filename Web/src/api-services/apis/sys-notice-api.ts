@@ -130,8 +130,8 @@ export const SysNoticeApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
-         * @summary 获取通知公告分页列表 📢
-         * @param {PageNoticeInput} [body] 
+         * @summary 获取通知公告分页列表（高级查询） 🔖
+         * @param {PageAdvancedInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -178,7 +178,7 @@ export const SysNoticeApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
-         * @summary 获取通知公告分页列表 📢
+         * @summary 获取通知公告分页列表 🔖📢
          * @param {PageNoticeInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -496,7 +496,14 @@ export const SysNoticeApiFp = function(configuration?: Configuration) {
                 return axios.request(axiosRequestArgs);
             };
         },
-        async apiSysNoticePageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<any>>> {
+        /**
+         * 
+         * @summary 获取通知公告分页列表（高级查询） 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysNoticePageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListSysNotice>>> {
             const localVarAxiosArgs = await SysNoticeApiAxiosParamCreator(configuration).apiSysNoticePageAdvancedPost(body, options);
             return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
                 const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
@@ -505,7 +512,7 @@ export const SysNoticeApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary 获取通知公告分页列表 📢
+         * @summary 获取通知公告分页列表 🔖📢
          * @param {PageNoticeInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -615,12 +622,19 @@ export const SysNoticeApiFactory = function (configuration?: Configuration, base
         async apiSysNoticeDeletePost(body?: DeleteNoticeInput, options?: AxiosRequestConfig): Promise<AxiosResponse<void>> {
             return SysNoticeApiFp(configuration).apiSysNoticeDeletePost(body, options).then((request) => request(axios, basePath));
         },
-        async apiSysNoticePageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<any>> {
+        /**
+         * 
+         * @summary 获取通知公告分页列表（高级查询） 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysNoticePageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListSysNotice>> {
             return SysNoticeApiFp(configuration).apiSysNoticePageAdvancedPost(body, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @summary 获取通知公告分页列表 📢
+         * @summary 获取通知公告分页列表 🔖📢
          * @param {PageNoticeInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -711,18 +725,18 @@ export class SysNoticeApi extends BaseAPI {
     }
     /**
      * 
-     * @summary 获取通知公告分页列表（高级查询）
+     * @summary 获取通知公告分页列表（高级查询） 🔖
      * @param {PageAdvancedInput} [body] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof SysNoticeApi
      */
-    public async apiSysNoticePageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<any>> {
+    public async apiSysNoticePageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListSysNotice>> {
         return SysNoticeApiFp(this.configuration).apiSysNoticePageAdvancedPost(body, options).then((request) => request(this.axios, this.basePath));
     }
     /**
      * 
-     * @summary 获取通知公告分页列表 📢
+     * @summary 获取通知公告分页列表 🔖📢
      * @param {PageNoticeInput} [body] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}

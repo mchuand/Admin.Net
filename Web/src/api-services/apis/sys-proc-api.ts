@@ -31,7 +31,7 @@ export const SysProcApiAxiosParamCreator = function (configuration?: Configurati
     return {
         /**
          * 
-         * @summary 获取存储过程返回数据集-Oracle、达梦参数顺序不能错  Oracle 返回table、table1，其他返回table1、table2。适用于报表、复杂详细页面等 🔖
+         * @summary 获取存储过程返回数据集-Oracle、达梦参数顺序不能错 Oracle 返回table、table1，其他返回table1、table2。适用于报表、复杂详细页面等 🔖
          * @param {BaseProcInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -232,7 +232,7 @@ export const SysProcApiFp = function(configuration?: Configuration) {
     return {
         /**
          * 
-         * @summary 获取存储过程返回数据集-Oracle、达梦参数顺序不能错  Oracle 返回table、table1，其他返回table1、table2。适用于报表、复杂详细页面等 🔖
+         * @summary 获取存储过程返回数据集-Oracle、达梦参数顺序不能错 Oracle 返回table、table1，其他返回table1、table2。适用于报表、复杂详细页面等 🔖
          * @param {BaseProcInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -297,7 +297,7 @@ export const SysProcApiFactory = function (configuration?: Configuration, basePa
     return {
         /**
          * 
-         * @summary 获取存储过程返回数据集-Oracle、达梦参数顺序不能错  Oracle 返回table、table1，其他返回table1、table2。适用于报表、复杂详细页面等 🔖
+         * @summary 获取存储过程返回数据集-Oracle、达梦参数顺序不能错 Oracle 返回table、table1，其他返回table1、table2。适用于报表、复杂详细页面等 🔖
          * @param {BaseProcInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -347,7 +347,7 @@ export const SysProcApiFactory = function (configuration?: Configuration, basePa
 export class SysProcApi extends BaseAPI {
     /**
      * 
-     * @summary 获取存储过程返回数据集-Oracle、达梦参数顺序不能错  Oracle 返回table、table1，其他返回table1、table2。适用于报表、复杂详细页面等 🔖
+     * @summary 获取存储过程返回数据集-Oracle、达梦参数顺序不能错 Oracle 返回table、table1，其他返回table1、table2。适用于报表、复杂详细页面等 🔖
      * @param {BaseProcInput} [body] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}

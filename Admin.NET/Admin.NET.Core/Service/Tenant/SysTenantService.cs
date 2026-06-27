@@ -97,6 +97,45 @@ public class SysTenantService : IDynamicApiController, ITransient
     }
 
     /// <summary>
+    /// 获取租户高级查询分页列表 🔖
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [DisplayName("获取租户高级查询分页列表")]
+    public async Task<SqlSugarPagedList<TenantOutput>> PageAdvanced(PageAdvancedInput input)
+    {
+        return await _sysTenantRep.AsQueryable()
+            .LeftJoin<SysUser>((u, a) => u.UserId == a.Id).ClearFilter()
+            .LeftJoin<SysOrg>((u, a, b) => u.OrgId == b.Id).ClearFilter()
+            .ApplyAdvancedQuery(input.Conditions)
+            .ApplyKeywordSearch(input.KeywordFields, input.Keyword)
+            .OrderBy(u => new { u.OrderNo, u.Id })
+            .Select((u, a, b) => new TenantOutput
+            {
+                Id = u.Id,
+                OrgId = b.Id,
+                Name = b.Name,
+                UserId = a.Id,
+                AdminAccount = a.Account,
+                Phone = a.Phone,
+                Host = u.Host,
+                Email = a.Email,
+                TenantType = u.TenantType,
+                DbType = u.DbType,
+                Connection = u.Connection,
+                ConfigId = u.ConfigId,
+                OrderNo = u.OrderNo,
+                Remark = u.Remark,
+                Status = u.Status,
+                CreateTime = u.CreateTime,
+                CreateUserName = u.CreateUserName,
+                UpdateTime = u.UpdateTime,
+                UpdateUserName = u.UpdateUserName,
+            }, true)
+            .ToPagedListAsync(input.Page, input.PageSize);
+    }
+
+    /// <summary>
     /// 获取租户列表
     /// </summary>
     /// <returns></returns>

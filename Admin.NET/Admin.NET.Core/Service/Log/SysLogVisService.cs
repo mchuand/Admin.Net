@@ -1,4 +1,4 @@
-﻿// Admin.NET 项目的版权、商标、专利和其他相关权利均受相应法律法规的保护。使用本项目应遵守相关法律法规和许可证的要求。
+// Admin.NET 项目的版权、商标、专利和其他相关权利均受相应法律法规的保护。使用本项目应遵守相关法律法规和许可证的要求。
 //
 // 本项目主要遵循 MIT 许可证和 Apache 许可证（版本 2.0）进行分发和使用。许可证位于源代码树根目录中的 LICENSE-MIT 和 LICENSE-APACHE 文件。
 //
@@ -39,6 +39,20 @@ public class SysLogVisService : IDynamicApiController, ITransient
             .WhereIF(!string.IsNullOrWhiteSpace(input.Elapsed.ToString()), u => u.Elapsed >= input.Elapsed)
             .WhereIF(!string.IsNullOrWhiteSpace(input.Status) && input.Status == "200", u => u.Status == "200")
             .WhereIF(!string.IsNullOrWhiteSpace(input.Status) && input.Status != "200", u => u.Status != "200")
+            .OrderBy(u => u.CreateTime, OrderByType.Desc)
+            .ToPagedListAsync(input.Page, input.PageSize);
+    }
+
+    /// <summary>
+    /// 获取访问日志高级查询分页列表 🔖
+    /// </summary>
+    /// <returns></returns>
+    [SuppressMonitor]
+    [DisplayName("获取访问日志高级查询分页列表")]
+    public async Task<SqlSugarPagedList<SysLogVis>> PageAdvanced(PageAdvancedInput input)
+    {
+        return await _sysLogVisRep.AsQueryable()
+            .ApplyAdvancedQuery(input.Conditions)
             .OrderBy(u => u.CreateTime, OrderByType.Desc)
             .ToPagedListAsync(input.Page, input.PageSize);
     }

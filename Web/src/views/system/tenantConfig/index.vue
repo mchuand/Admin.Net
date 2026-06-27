@@ -180,7 +180,7 @@ const handleAdvancedQuery = async (conditions: QueryCondition[]) => {
 	};
 
 	try {
-		let res = await getAPI(SysTenantConfigApi).apiSysTenantConfigPagePost(params);
+		let res = await getAPI(SysTenantConfigApi).apiSysTenantConfigPageAdvancedPost(params);
 		state.tableData = res.data.result?.items ?? [];
 		state.tableParams.total = res.data.result?.total;
 	} catch (error) {

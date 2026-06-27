@@ -62,6 +62,12 @@ export interface TypeInfo {
     metadataToken?: number;
 
     /**
+     * @type {boolean}
+     * @memberof TypeInfo
+     */
+    isInterface?: boolean;
+
+    /**
      * @type {MemberTypes}
      * @memberof TypeInfo
      */
@@ -96,12 +102,6 @@ export interface TypeInfo {
      * @memberof TypeInfo
      */
     module?: Module;
-
-    /**
-     * @type {boolean}
-     * @memberof TypeInfo
-     */
-    isInterface?: boolean;
 
     /**
      * @type {boolean}

@@ -21,12 +21,13 @@ import { AddConfigInput } from '../models';
 import { AdminResultListString } from '../models';
 import { AdminResultListSysConfig } from '../models';
 import { AdminResultSqlSugarPagedListSysConfig } from '../models';
+import { AdminResultSqlSugarPagedListSysTenantConfig } from '../models';
 import { AdminResultString } from '../models';
 import { AdminResultSysConfig } from '../models';
 import { BatchConfigInput } from '../models';
 import { DeleteConfigInput } from '../models';
-import { PageConfigInput } from '../models';
 import { PageAdvancedInput } from '../models';
+import { PageConfigInput } from '../models';
 import { UpdateConfigInput } from '../models';
 /**
  * SysTenantConfigApi - axios parameter creator
@@ -420,13 +421,13 @@ export const SysTenantConfigApiAxiosParamCreator = function (configuration?: Con
         },
         /**
          * 
-         * @summary 获取配置参数分页列表 🔖
-         * @param {PageConfigInput} [body] 
+         * @summary 获取配置参数分页列表（高级查询） 🔖
+         * @param {PageAdvancedInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiSysTenantConfigPagePost: async (body?: PageConfigInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/sysTenantConfig/page`;
+        apiSysTenantConfigPageAdvancedPost: async (body?: PageAdvancedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/sysTenantConfig/pageAdvanced`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, 'https://example.com');
             let baseOptions;
@@ -468,13 +469,13 @@ export const SysTenantConfigApiAxiosParamCreator = function (configuration?: Con
         },
         /**
          * 
-         * @summary 获取配置参数分页列表（高级查询） 🔖
-         * @param {PageAdvancedInput} [body] 
+         * @summary 获取配置参数分页列表 🔖
+         * @param {PageConfigInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiSysTenantConfigPageAdvancedPost: async (body?: PageAdvancedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/sysTenantConfig/pageAdvanced`;
+        apiSysTenantConfigPagePost: async (body?: PageConfigInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/sysTenantConfig/page`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, 'https://example.com');
             let baseOptions;
@@ -684,13 +685,13 @@ export const SysTenantConfigApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary 获取配置参数分页列表 🔖
-         * @param {PageConfigInput} [body] 
+         * @summary 获取配置参数分页列表（高级查询） 🔖
+         * @param {PageAdvancedInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiSysTenantConfigPagePost(body?: PageConfigInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListSysConfig>>> {
-            const localVarAxiosArgs = await SysTenantConfigApiAxiosParamCreator(configuration).apiSysTenantConfigPagePost(body, options);
+        async apiSysTenantConfigPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListSysTenantConfig>>> {
+            const localVarAxiosArgs = await SysTenantConfigApiAxiosParamCreator(configuration).apiSysTenantConfigPageAdvancedPost(body, options);
             return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
                 const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
                 return axios.request(axiosRequestArgs);
@@ -698,13 +699,13 @@ export const SysTenantConfigApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary 获取配置参数分页列表（高级查询） 🔖
-         * @param {PageAdvancedInput} [body] 
+         * @summary 获取配置参数分页列表 🔖
+         * @param {PageConfigInput} [body] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiSysTenantConfigPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<any>>> {
-            const localVarAxiosArgs = await SysTenantConfigApiAxiosParamCreator(configuration).apiSysTenantConfigPageAdvancedPost(body, options);
+        async apiSysTenantConfigPagePost(body?: PageConfigInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListSysConfig>>> {
+            const localVarAxiosArgs = await SysTenantConfigApiAxiosParamCreator(configuration).apiSysTenantConfigPagePost(body, options);
             return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
                 const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
                 return axios.request(axiosRequestArgs);
@@ -814,6 +815,16 @@ export const SysTenantConfigApiFactory = function (configuration?: Configuration
         },
         /**
          * 
+         * @summary 获取配置参数分页列表（高级查询） 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysTenantConfigPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListSysTenantConfig>> {
+            return SysTenantConfigApiFp(configuration).apiSysTenantConfigPageAdvancedPost(body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary 获取配置参数分页列表 🔖
          * @param {PageConfigInput} [body] 
          * @param {*} [options] Override http request option.
@@ -821,16 +832,6 @@ export const SysTenantConfigApiFactory = function (configuration?: Configuration
          */
         async apiSysTenantConfigPagePost(body?: PageConfigInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListSysConfig>> {
             return SysTenantConfigApiFp(configuration).apiSysTenantConfigPagePost(body, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary 获取配置参数分页列表（高级查询） 🔖
-         * @param {PageAdvancedInput} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiSysTenantConfigPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<any>> {
-            return SysTenantConfigApiFp(configuration).apiSysTenantConfigPageAdvancedPost(body, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -941,6 +942,17 @@ export class SysTenantConfigApi extends BaseAPI {
     }
     /**
      * 
+     * @summary 获取配置参数分页列表（高级查询） 🔖
+     * @param {PageAdvancedInput} [body] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SysTenantConfigApi
+     */
+    public async apiSysTenantConfigPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListSysTenantConfig>> {
+        return SysTenantConfigApiFp(this.configuration).apiSysTenantConfigPageAdvancedPost(body, options).then((request) => request(this.axios, this.basePath));
+    }
+    /**
+     * 
      * @summary 获取配置参数分页列表 🔖
      * @param {PageConfigInput} [body] 
      * @param {*} [options] Override http request option.
@@ -949,17 +961,6 @@ export class SysTenantConfigApi extends BaseAPI {
      */
     public async apiSysTenantConfigPagePost(body?: PageConfigInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListSysConfig>> {
         return SysTenantConfigApiFp(this.configuration).apiSysTenantConfigPagePost(body, options).then((request) => request(this.axios, this.basePath));
-    }
-    /**
-     * 
-     * @summary 获取配置参数分页列表（高级查询） 🔖
-     * @param {PageAdvancedInput} [body] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof SysTenantConfigApi
-     */
-    public async apiSysTenantConfigPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<any>> {
-        return SysTenantConfigApiFp(this.configuration).apiSysTenantConfigPageAdvancedPost(body, options).then((request) => request(this.axios, this.basePath));
     }
     /**
      * 

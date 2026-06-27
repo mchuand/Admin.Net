@@ -1,33 +1,16 @@
-﻿<template>
+<template>
 	<div class="sys-user-reg-way-container">
-		<el-card shadow="hover" :body-style="{ paddingBottom: '0' }" v-auth="'sysUserRegWay:list'">
-			<el-form :model="state.queryParams" ref="queryForm" :inline="true">
-				<el-form-item label="租户" v-if="userStore.userInfos.accountType == 999">
-					<el-select v-model="state.queryParams.tenantId" placeholder="租户" style="width: 100%">
-						<el-option :value="item.value" :label="`${item.label} (${item.host})`" v-for="(item, index) in state.tenantList" :key="index" />
-					</el-select>
-				</el-form-item>
-				<el-form-item label="关键字">
-					<el-input v-model="state.queryParams.keyword" placeholder="关键字" clearable />
-				</el-form-item>
-				<el-form-item label="名称">
-					<el-input v-model="state.queryParams.name" placeholder="名称" clearable />
-				</el-form-item>
-				<el-form-item>
-					<el-button-group>
-						<el-button type="primary" icon="ele-Search" @click="handleQuery"> 查询
-						</el-button>
-						<el-button icon="ele-Refresh" @click="resetQuery"> 重置 </el-button>
-					</el-button-group>
-				</el-form-item>
-				<el-form-item>
-					<el-button type="primary" icon="ele-Plus" @click="openAddRegWay" v-auth="'sysUserRegWay:add'"> 新增
-					</el-button>
-				</el-form-item>
-			</el-form>
-		</el-card>
+		<el-card class="full-table" header-class="card_header" shadow="hover" style="margin-top: 5px">
+			<template #header>
+				<!-- 按钮栏组件 -->
+				<ButtonBar mode="sysUserRegWay" :buttonConfig="regWayButtonConfig" displayStyle="inline"
+					:onButtonClick="handleButtonClick" />
 
-		<el-card class="full-table" shadow="hover" style="margin-top: 5px">
+				<!-- 高级查询组件 -->
+				<AdvancedSearch ref="searchRef" :fields="searchFields" :keywordFields="keywordFields"
+					mode="sysUserRegWay" :disableAutoQuery="true" @query="handleAdvancedQuery" @reset="handleAdvancedReset" />
+			</template>
+
 			<el-table :data="state.regWayData" style="width: 100%" v-loading="state.loading" border>
 				<el-table-column type="index" label="序号" width="55" align="center" fixed />
 				<el-table-column prop="name" label="名称" align="center" show-overflow-tooltip />
@@ -47,8 +30,12 @@
 					</template>
 				</el-table-column>
 			</el-table>
+			<el-pagination v-model:currentPage="state.tableParams.page" v-model:page-size="state.tableParams.pageSize"
+				:total="state.tableParams.total" :page-sizes="[10, 20, 50, 100]" size="small" background
+				@size-change="handleSizeChange" @current-change="handleCurrentChange"
+				layout="total, sizes, prev, pager, next, jumper" />
 		</el-card>
-		<EditRegWay ref="editRegWayRef" :title="state.editRegWayTitle" @handleQuery="handleQuery" />
+		<EditRegWay ref="editRegWayRef" :title="state.editRegWayTitle" @handleQuery="handleAdvancedQuery(state.advancedConditions)" />
 	</div>
 </template>
 
@@ -57,53 +44,118 @@ import { onMounted, reactive, ref } from 'vue';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import { getAPI } from '/@/utils/axios-utils';
 import { UserRegWayOutput } from '/@/api-services/models';
-import { SysTenantApi, SysUserRegWayApi} from '/@/api-services/api';
+import { SysTenantApi, SysUserRegWayApi } from '/@/api-services/api';
 import { auths } from "/@/utils/authFunction";
 import { useUserInfo } from "/@/stores/userInfo";
 import EditRegWay from './component/editRegWay.vue';
 import ModifyRecord from '/@/components/table/modifyRecord.vue';
+import ButtonBar from '/@/components/buttonBar/index.vue';
+import AdvancedSearch from '/@/components/advancedSearch/index.vue';
+import type { SearchField, QueryCondition } from '/@/components/advancedSearch/types';
 
 const userStore = useUserInfo();
 const editRegWayRef = ref<InstanceType<typeof EditRegWay>>();
+const searchRef = ref();
 const state = reactive({
 	loading: false,
 	tenantList: [] as Array<any>,
-	regWayData: [] as Array<UserRegWayOutput>,
 	queryParams: {
-		name: undefined,
-		keyword: undefined,
-		tenantId: undefined,
+		tenantId: undefined as number | undefined,
 	},
+	advancedConditions: [] as QueryCondition[],
+	tableParams: {
+		page: 1,
+		pageSize: 50,
+		total: 0 as any,
+	},
+	regWayData: [] as Array<UserRegWayOutput>,
 	editRegWayTitle: '',
 });
+
+// 搜索字段配置
+const searchFields: SearchField[] = [
+	{ label: '租户', prop: 'tenantId', type: 'select', options: [], visible: userStore.userInfos.accountType == 999 },
+	{ label: '名称', prop: 'name', type: 'string' },
+];
+
+// 关键字搜索字段列表
+const keywordFields = ['name', 'orgName', 'roleName', 'posName'];
+
+// 按钮栏配置
+const regWayButtonConfig = {
+	base: {
+		type: 'group' as const,
+		childs: {
+			add: { type: 'button' as const, label: '新增', icon: 'ele-Plus', color: 'primary' as const },
+		}
+	},
+};
+
+// 按钮栏点击事件
+const handleButtonClick = (key: string) => {
+	switch (key) {
+		case 'add': openAddRegWay(); break;
+	}
+};
 
 onMounted(async () => {
 	if (userStore.userInfos.accountType == 999) {
 		state.tenantList = await getAPI(SysTenantApi).apiSysTenantListGet().then(res => res.data.result ?? []);
-		state.queryParams.tenantId = state.tenantList[0].value;
+		
+		const tenantField = searchFields.find(f => f.prop === 'tenantId');
+		if (tenantField) {
+			tenantField.options = state.tenantList.map(item => ({
+				label: `${item.label} (${item.host})`,
+				value: item.value
+			}));
+		}
+		
+		if (state.tenantList.length > 0) {
+			state.queryParams.tenantId = state.tenantList[0].value;
+			if (searchRef.value) {
+				searchRef.value.setQueryParams({ tenantId: state.tenantList[0].value });
+			}
+		}
 	}
-	handleQuery();
+	await handleAdvancedQuery([]);
 });
 
-// 查询操作
-const handleQuery = async () => {
+// 高级查询（所有查询统一走此方法）
+const handleAdvancedQuery = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = conditions;
 	state.loading = true;
-	state.regWayData = await getAPI(SysUserRegWayApi).apiSysUserRegWayListPost(state.queryParams).then(res => res.data.result ?? []);
+
+	const keywordValue = searchRef.value?.getKeyword?.() || '';
+
+	let params: any = {
+		page: state.tableParams.page,
+		pageSize: state.tableParams.pageSize,
+		keyword: keywordValue,
+		keywordFields: keywordFields,
+		conditions: conditions
+	};
+
+	try {
+		let res = await getAPI(SysUserRegWayApi).apiSysUserRegWayPageAdvancedPost(params);
+		state.regWayData = res.data.result?.items ?? [];
+		state.tableParams.total = res.data.result?.total;
+	} catch (error) {
+		console.error('查询失败:', error);
+	}
 	state.loading = false;
 };
 
-// 重置操作
-const resetQuery = () => {
-	state.queryParams.name = undefined;
-	state.queryParams.keyword = undefined;
-	state.queryParams.tenantId = undefined;
-	handleQuery();
+// 高级查询重置
+const handleAdvancedReset = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = [];
+	await handleAdvancedQuery([]);
 };
 
 // 打开新增页面
 const openAddRegWay = () => {
 	state.editRegWayTitle = '添加注册方案';
-	editRegWayRef.value?.openDialog({ tenantId: state.queryParams.tenantId, orderNo: 100 });
+	const tenantId = searchRef.value?.getQueryParams?.().find((c: any) => c.field === 'tenantId')?.value ?? state.queryParams.tenantId;
+	editRegWayRef.value?.openDialog({ tenantId, orderNo: 100 });
 };
 
 // 打开编辑页面
@@ -119,9 +171,39 @@ const delRegWay = (row: any) => {
 		cancelButtonText: '取消',
 		type: 'warning',
 	}).then(async () => {
-			await getAPI(SysUserRegWayApi).apiSysUserRegWayDeletePost({ id: row.id });
-			handleQuery();
-			ElMessage.success('删除成功');
+		await getAPI(SysUserRegWayApi).apiSysUserRegWayDeletePost({ id: row.id });
+		await handleAdvancedQuery(state.advancedConditions);
+		ElMessage.success('删除成功');
 	}).catch(() => { });
 };
+
+// 改变页面容量
+const handleSizeChange = async (val: number) => {
+	state.tableParams.pageSize = val;
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
+};
+
+// 改变页码序号
+const handleCurrentChange = async (val: number) => {
+	state.tableParams.page = val;
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
+};
 </script>
+
+<style scoped lang="scss">
+.sys-user-reg-way-container {
+	height: 100%;
+}
+
+:deep(.card_header) {
+	padding: 0 3px 3px 3px;
+}
+</style>

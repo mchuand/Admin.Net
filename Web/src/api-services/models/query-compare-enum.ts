@@ -13,7 +13,7 @@
  */
 
 /**
- * 查询比对方式枚举  定义高级查询支持的所有比对操作类型<br />&nbsp;等于 Eq = 0<br />&nbsp;不等于 Ne = 1<br />&nbsp;小于 Lt = 2<br />&nbsp;小于等于 Le = 3<br />&nbsp;大于 Gt = 4<br />&nbsp;大于等于 Ge = 5<br />&nbsp;模糊匹配 Like = 6<br />&nbsp;不匹配 NotLike = 7<br />&nbsp;在范围内 In = 8<br />&nbsp;不在范围内 NotIn = 9<br />&nbsp;在...之间 Between = 10<br />&nbsp;为空 IsNull = 11<br />&nbsp;不为空 IsNotNull = 12<br />
+ * 查询比对方式枚举 定义高级查询支持的所有比对操作类型<br />&nbsp;等于 Eq = 0<br />&nbsp;不等于 Ne = 1<br />&nbsp;小于 Lt = 2<br />&nbsp;小于等于 Le = 3<br />&nbsp;大于 Gt = 4<br />&nbsp;大于等于 Ge = 5<br />&nbsp;模糊匹配 Like = 6<br />&nbsp;不匹配 NotLike = 7<br />&nbsp;在范围内 In = 8<br />&nbsp;不在范围内 NotIn = 9<br />&nbsp;在...之间 Between = 10<br />&nbsp;为空 IsNull = 11<br />&nbsp;不为空 IsNotNull = 12<br />
  * @export
  * @enum {string}
  */

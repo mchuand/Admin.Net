@@ -20,6 +20,7 @@ import { BASE_PATH, COLLECTION_FORMATS, RequestArgs, BaseAPI, RequiredError } fr
 import { AdminResultSqlSugarPagedListSysLogOp } from '../models';
 import { AdminResultSysLogOp } from '../models';
 import { LogInput } from '../models';
+import { PageAdvancedInput } from '../models';
 import { PageOpLogInput } from '../models';
 /**
  * SysLogOpApi - axios parameter creator
@@ -169,6 +170,54 @@ export const SysLogOpApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
+         * @summary 获取操作日志高级查询分页列表 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiSysLogOpPageAdvancedPost: async (body?: PageAdvancedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/sysLogOp/pageAdvanced`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, 'https://example.com');
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+            const localVarRequestOptions :AxiosRequestConfig = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            // http bearer authentication required
+            if (configuration && configuration.accessToken) {
+                const accessToken = typeof configuration.accessToken === 'function'
+                    ? await configuration.accessToken()
+                    : await configuration.accessToken;
+                localVarHeaderParameter["Authorization"] = "Bearer " + accessToken;
+            }
+
+            localVarHeaderParameter['Content-Type'] = 'application/json-patch+json';
+
+            const query = new URLSearchParams(localVarUrlObj.search);
+            for (const key in localVarQueryParameter) {
+                query.set(key, localVarQueryParameter[key]);
+            }
+            for (const key in options.params) {
+                query.set(key, options.params[key]);
+            }
+            localVarUrlObj.search = (new URLSearchParams(query)).toString();
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            const needsSerialization = (typeof body !== "string") || localVarRequestOptions.headers['Content-Type'] === 'application/json';
+            localVarRequestOptions.data =  needsSerialization ? JSON.stringify(body !== undefined ? body : {}) : (body || "");
+
+            return {
+                url: localVarUrlObj.pathname + localVarUrlObj.search + localVarUrlObj.hash,
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary 获取操作日志分页列表 🔖
          * @param {PageOpLogInput} [body] 
          * @param {*} [options] Override http request option.
@@ -267,6 +316,20 @@ export const SysLogOpApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary 获取操作日志高级查询分页列表 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysLogOpPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLogOp>>> {
+            const localVarAxiosArgs = await SysLogOpApiAxiosParamCreator(configuration).apiSysLogOpPageAdvancedPost(body, options);
+            return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
+                const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
+                return axios.request(axiosRequestArgs);
+            };
+        },
+        /**
+         * 
          * @summary 获取操作日志分页列表 🔖
          * @param {PageOpLogInput} [body] 
          * @param {*} [options] Override http request option.
@@ -319,6 +382,16 @@ export const SysLogOpApiFactory = function (configuration?: Configuration, baseP
         },
         /**
          * 
+         * @summary 获取操作日志高级查询分页列表 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysLogOpPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLogOp>> {
+            return SysLogOpApiFp(configuration).apiSysLogOpPageAdvancedPost(body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary 获取操作日志分页列表 🔖
          * @param {PageOpLogInput} [body] 
          * @param {*} [options] Override http request option.
@@ -368,6 +441,17 @@ export class SysLogOpApi extends BaseAPI {
      */
     public async apiSysLogOpExportPost(body?: LogInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<void>> {
         return SysLogOpApiFp(this.configuration).apiSysLogOpExportPost(body, options).then((request) => request(this.axios, this.basePath));
+    }
+    /**
+     * 
+     * @summary 获取操作日志高级查询分页列表 🔖
+     * @param {PageAdvancedInput} [body] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SysLogOpApi
+     */
+    public async apiSysLogOpPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListSysLogOp>> {
+        return SysLogOpApiFp(this.configuration).apiSysLogOpPageAdvancedPost(body, options).then((request) => request(this.axios, this.basePath));
     }
     /**
      * 
