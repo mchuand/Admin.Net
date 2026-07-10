@@ -19,6 +19,7 @@ import { Configuration } from '../configuration';
 import { BASE_PATH, COLLECTION_FORMATS, RequestArgs, BaseAPI, RequiredError } from '../base';
 import { AddRegionInput } from '../models';
 import { AdminResultInt64 } from '../models';
+import { PageAdvancedInput } from '../models';
 import { AdminResultListSysRegion } from '../models';
 import { AdminResultSqlSugarPagedListSysRegion } from '../models';
 import { DeleteRegionInput } from '../models';
@@ -187,6 +188,54 @@ export const SysRegionApiAxiosParamCreator = function (configuration?: Configura
          */
         apiSysRegionPagePost: async (body?: PageRegionInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/sysRegion/page`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, 'https://example.com');
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+            const localVarRequestOptions :AxiosRequestConfig = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            // http bearer authentication required
+            if (configuration && configuration.accessToken) {
+                const accessToken = typeof configuration.accessToken === 'function'
+                    ? await configuration.accessToken()
+                    : await configuration.accessToken;
+                localVarHeaderParameter["Authorization"] = "Bearer " + accessToken;
+            }
+
+            localVarHeaderParameter['Content-Type'] = 'application/json-patch+json';
+
+            const query = new URLSearchParams(localVarUrlObj.search);
+            for (const key in localVarQueryParameter) {
+                query.set(key, localVarQueryParameter[key]);
+            }
+            for (const key in options.params) {
+                query.set(key, options.params[key]);
+            }
+            localVarUrlObj.search = (new URLSearchParams(query)).toString();
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            const needsSerialization = (typeof body !== "string") || localVarRequestOptions.headers['Content-Type'] === 'application/json';
+            localVarRequestOptions.data =  needsSerialization ? JSON.stringify(body !== undefined ? body : {}) : (body || "");
+
+            return {
+                url: localVarUrlObj.pathname + localVarUrlObj.search + localVarUrlObj.hash,
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary 获取行政区域分页列表（高级查询） 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiSysRegionPageAdvancedPost: async (body?: PageAdvancedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/sysRegion/pageAdvanced`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, 'https://example.com');
             let baseOptions;
@@ -427,6 +476,20 @@ export const SysRegionApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary 获取行政区域分页列表（高级查询） 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysRegionPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListSysRegion>>> {
+            const localVarAxiosArgs = await SysRegionApiAxiosParamCreator(configuration).apiSysRegionPageAdvancedPost(body, options);
+            return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
+                const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
+                return axios.request(axiosRequestArgs);
+            };
+        },
+        /**
+         * 
          * @summary 同步行政区域 🔖
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -516,6 +579,16 @@ export const SysRegionApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
+         * @summary 获取行政区域分页列表（高级查询） 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysRegionPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListSysRegion>> {
+            return SysRegionApiFp(configuration).apiSysRegionPageAdvancedPost(body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary 同步行政区域 🔖
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -595,6 +668,17 @@ export class SysRegionApi extends BaseAPI {
      */
     public async apiSysRegionPagePost(body?: PageRegionInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListSysRegion>> {
         return SysRegionApiFp(this.configuration).apiSysRegionPagePost(body, options).then((request) => request(this.axios, this.basePath));
+    }
+    /**
+     * 
+     * @summary 获取行政区域分页列表（高级查询） 🔖
+     * @param {PageAdvancedInput} [body] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SysRegionApi
+     */
+    public async apiSysRegionPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListSysRegion>> {
+        return SysRegionApiFp(this.configuration).apiSysRegionPageAdvancedPost(body, options).then((request) => request(this.axios, this.basePath));
     }
     /**
      * 

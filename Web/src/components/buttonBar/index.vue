@@ -142,6 +142,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ArrowDown, Setting } from '@element-plus/icons-vue';
 import { useUserInfo } from '/@/stores/userInfo';
+import { useThemeConfig } from '/@/stores/themeConfig';
 import { Local } from '/@/utils/storage';
 import { ElMessage } from 'element-plus';
 
@@ -190,11 +191,20 @@ const props = withDefaults(defineProps<{
 });
 
 const stores = useUserInfo();
+const themeStore = useThemeConfig();
 const authBtnList = computed(() => stores.userInfos.authBtnList ?? []);
+
+// 获取全局组件大小作为默认按钮大小
+const getDefaultSize = (): 'small' | 'default' | 'large' => {
+	const globalSize = themeStore.themeConfig.globalComponentSize;
+	if (globalSize === 'large') return 'large';
+	if (globalSize === 'small') return 'small';
+	return 'default';
+};
 
 // ========== 设置相关 ==========
 const settingsVisible = ref(false);
-const defaultSettings: BarSettings = { size: 'default', showIcon: true, showLabel: true };
+const defaultSettings: BarSettings = { size: getDefaultSize(), showIcon: true, showLabel: true };
 const barSettings = reactive<BarSettings>({ ...defaultSettings });
 
 const loadSettings = () => {

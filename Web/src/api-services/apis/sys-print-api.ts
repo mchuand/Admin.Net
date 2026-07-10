@@ -21,6 +21,7 @@ import { AddPrintInput } from '../models';
 import { AdminResultSqlSugarPagedListSysPrint } from '../models';
 import { AdminResultSysPrint } from '../models';
 import { DeletePrintInput } from '../models';
+import { PageAdvancedInput } from '../models';
 import { PagePrintInput } from '../models';
 import { UpdatePrintInput } from '../models';
 /**
@@ -134,6 +135,54 @@ export const SysPrintApiAxiosParamCreator = function (configuration?: Configurat
          */
         apiSysPrintPagePost: async (body?: PagePrintInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/sysPrint/page`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, 'https://example.com');
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+            const localVarRequestOptions :AxiosRequestConfig = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            // http bearer authentication required
+            if (configuration && configuration.accessToken) {
+                const accessToken = typeof configuration.accessToken === 'function'
+                    ? await configuration.accessToken()
+                    : await configuration.accessToken;
+                localVarHeaderParameter["Authorization"] = "Bearer " + accessToken;
+            }
+
+            localVarHeaderParameter['Content-Type'] = 'application/json-patch+json';
+
+            const query = new URLSearchParams(localVarUrlObj.search);
+            for (const key in localVarQueryParameter) {
+                query.set(key, localVarQueryParameter[key]);
+            }
+            for (const key in options.params) {
+                query.set(key, options.params[key]);
+            }
+            localVarUrlObj.search = (new URLSearchParams(query)).toString();
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            const needsSerialization = (typeof body !== "string") || localVarRequestOptions.headers['Content-Type'] === 'application/json';
+            localVarRequestOptions.data =  needsSerialization ? JSON.stringify(body !== undefined ? body : {}) : (body || "");
+
+            return {
+                url: localVarUrlObj.pathname + localVarUrlObj.search + localVarUrlObj.hash,
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary 获取打印模板列表（高级查询）🖨️
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiSysPrintPageAdvancedPost: async (body?: PageAdvancedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/sysPrint/pageAdvanced`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, 'https://example.com');
             let baseOptions;
@@ -323,6 +372,20 @@ export const SysPrintApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary 获取打印模板列表（高级查询）🖨️
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysPrintPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListSysPrint>>> {
+            const localVarAxiosArgs = await SysPrintApiAxiosParamCreator(configuration).apiSysPrintPageAdvancedPost(body, options);
+            return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
+                const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
+                return axios.request(axiosRequestArgs);
+            };
+        },
+        /**
+         * 
          * @summary 获取打印模板 🖨️
          * @param {string} name 
          * @param {*} [options] Override http request option.
@@ -390,6 +453,16 @@ export const SysPrintApiFactory = function (configuration?: Configuration, baseP
         },
         /**
          * 
+         * @summary 获取打印模板列表（高级查询）🖨️
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysPrintPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListSysPrint>> {
+            return SysPrintApiFp(configuration).apiSysPrintPageAdvancedPost(body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary 获取打印模板 🖨️
          * @param {string} name 
          * @param {*} [options] Override http request option.
@@ -450,6 +523,17 @@ export class SysPrintApi extends BaseAPI {
      */
     public async apiSysPrintPagePost(body?: PagePrintInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListSysPrint>> {
         return SysPrintApiFp(this.configuration).apiSysPrintPagePost(body, options).then((request) => request(this.axios, this.basePath));
+    }
+    /**
+     * 
+     * @summary 获取打印模板列表（高级查询）🖨️
+     * @param {PageAdvancedInput} [body] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SysPrintApi
+     */
+    public async apiSysPrintPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListSysPrint>> {
+        return SysPrintApiFp(this.configuration).apiSysPrintPageAdvancedPost(body, options).then((request) => request(this.axios, this.basePath));
     }
     /**
      * 

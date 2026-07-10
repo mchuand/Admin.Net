@@ -1,5 +1,5 @@
 <template>
-	<div class="sys-print-container">
+	<div class="sys-editPrint-container">
 		<div class="printDialog">
 			<el-dialog v-model="state.isShowDialog" draggable overflow destroy-on-close fullscreen>
 				<template #header>

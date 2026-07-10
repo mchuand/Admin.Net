@@ -1,16 +1,17 @@
 <template>
 	<div class="sys-vislog-container">
-		<el-card class="full-table" header-class="card_header" shadow="hover" style="margin-top: 5px">
+		<el-card class="full-table" header-class="card_header" shadow="hover">
 			<template #header>
 				<!-- 高级查询组件 -->
-				<AdvancedSearch ref="searchRef" :fields="searchFields" :keywordFields="keywordFields"
-					mode="sysVislog" :disableAutoQuery="true" @query="handleAdvancedQuery" @reset="handleAdvancedReset" />
+				<AdvancedSearch ref="searchRef" :fields="searchFields" :keywordFields="keywordFields" mode="sysVislog"
+					:disableAutoQuery="true" @query="handleAdvancedQuery" @reset="handleAdvancedReset" />
 			</template>
 
 			<el-table :data="state.logData" style="width: 100%" v-loading="state.loading" border>
 				<el-table-column type="index" label="序号" width="55" align="center" />
 				<el-table-column prop="displayTitle" label="显示名称" width="150" align="center" show-overflow-tooltip />
-				<el-table-column prop="actionName" label="方法名称" width="150" header-align="center" show-overflow-tooltip />
+				<el-table-column prop="actionName" label="方法名称" width="150" header-align="center"
+					show-overflow-tooltip />
 				<el-table-column prop="account" label="账号名称" width="100" align="center" show-overflow-tooltip />
 				<el-table-column prop="realName" label="真实姓名" width="100" align="center" show-overflow-tooltip />
 				<el-table-column prop="remoteIp" label="IP地址" min-width="120" align="center" show-overflow-tooltip />
@@ -26,19 +27,13 @@
 					</template>
 				</el-table-column>
 				<el-table-column prop="elapsed" label="耗时(ms)" width="90" align="center" show-overflow-tooltip />
-				<el-table-column prop="logDateTime" label="日志时间" width="160" align="center" fixed="right" show-overflow-tooltip />
+				<el-table-column prop="logDateTime" label="日志时间" width="160" align="center" fixed="right"
+					show-overflow-tooltip />
 			</el-table>
-			<el-pagination
-				v-model:currentPage="state.tableParams.page"
-				v-model:page-size="state.tableParams.pageSize"
-				:total="state.tableParams.total"
-				:page-sizes="[10, 20, 50, 100]"
-				size="small"
-				background
-				@size-change="handleSizeChange"
-				@current-change="handleCurrentChange"
-				layout="total, sizes, prev, pager, next, jumper"
-			/>
+			<el-pagination v-model:currentPage="state.tableParams.page" v-model:page-size="state.tableParams.pageSize"
+				:total="state.tableParams.total" :page-sizes="[10, 20, 50, 100]" size="small" background
+				@size-change="handleSizeChange" @current-change="handleCurrentChange"
+				layout="total, sizes, prev, pager, next, jumper" />
 		</el-card>
 	</div>
 </template>
@@ -71,6 +66,7 @@ const state = reactive({
 
 // 搜索字段配置
 const searchFields: SearchField[] = [
+	{ label: '显示名称', prop: 'displayTitle', type: 'string' },
 	{ label: '租户', prop: 'tenantId', type: 'select', options: [], visible: userStore.userInfos.accountType == 999 },
 	{ label: '日志时间', prop: 'logDateTime', type: 'datetimeRange' },
 	{ label: '方法名称', prop: 'actionName', type: 'string' },
@@ -81,7 +77,7 @@ const searchFields: SearchField[] = [
 			{ label: '失败', value: '400' },
 		]
 	},
-	{ label: '耗时', prop: 'elapsed', type: 'number' },
+	{ label: '耗时', prop: 'elapsed', type: 'numberRange' },
 	{ label: 'IP地址', prop: 'remoteIp', type: 'string' },
 ];
 
@@ -91,7 +87,7 @@ const keywordFields = ['displayTitle', 'actionName', 'account', 'remoteIp'];
 onMounted(async () => {
 	if (userStore.userInfos.accountType == 999) {
 		state.tenantList = await getAPI(SysTenantApi).apiSysTenantListGet().then(res => res.data.result ?? []);
-		
+
 		const tenantField = searchFields.find(f => f.prop === 'tenantId');
 		if (tenantField) {
 			tenantField.options = state.tenantList.map(item => ({
@@ -99,7 +95,7 @@ onMounted(async () => {
 				value: item.value
 			}));
 		}
-		
+
 		if (state.tenantList.length > 0) {
 			state.queryParams.tenantId = state.tenantList[0].value;
 			if (searchRef.value) {
@@ -169,6 +165,6 @@ const handleCurrentChange = async (val: number) => {
 }
 
 :deep(.card_header) {
-	padding: 0 3px 3px 3px;
+	padding: 3px 3px 3px 3px;
 }
 </style>

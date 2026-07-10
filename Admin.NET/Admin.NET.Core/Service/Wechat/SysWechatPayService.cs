@@ -72,6 +72,21 @@ public class SysWechatPayService : IDynamicApiController, ITransient
     }
 
     /// <summary>
+    /// 获取微信支付分页列表（高级查询） 🔖
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [DisplayName("获取微信支付分页列表（高级查询）")]
+    public virtual async Task<SqlSugarPagedList<SysWechatPay>> PageAdvanced(PageAdvancedInput input)
+    {
+        var query = _sysWechatPayRep.AsQueryable()
+            .ApplyKeywordSearch(input.KeywordFields, input.Keyword)
+            .ApplyAdvancedQuery(input.Conditions)
+            .OrderBy(u => new { u.CreateTime, u.Id }, OrderByType.Desc);
+        return await query.ToPagedListAsync(input.Page, input.PageSize);
+    }
+
+    /// <summary>
     /// 查询退款信息列表
     /// </summary>
     /// <param name="id"></param>

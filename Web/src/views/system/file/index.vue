@@ -1,36 +1,28 @@
 <template>
 	<div class="sys-file-container">
-		<el-card shadow="hover" :body-style="{ paddingBottom: '0' }">
-			<el-form :model="state.queryParams" ref="queryForm" :inline="true">
-				<el-form-item label="租户" v-if="userStore.userInfos.accountType == 999">
-					<el-select v-model="state.queryParams.tenantId" placeholder="租户" style="width: 100%">
+		<el-card shadow="hover" :body-style="{ paddingBottom: '0' }" v-if="userStore.userInfos.accountType == 999">
+			<el-form :inline="true">
+				<el-form-item label="租户">
+					<el-select v-model="state.queryParams.tenantId" placeholder="租户" style="width: 200px" @change="handleTenantChange">
 						<el-option :value="item.value" :label="`${item.label} (${item.host})`" v-for="(item, index) in state.tenantList" :key="index" />
 					</el-select>
-				</el-form-item>
-				<el-form-item label="文件名称" prop="fileName">
-					<el-input v-model="state.queryParams.fileName" placeholder="文件名称" clearable />
-				</el-form-item>
-				<el-form-item label="开始时间" prop="name">
-					<el-date-picker v-model="state.queryParams.startTime" type="datetime" placeholder="开始时间" value-format="YYYY-MM-DD HH:mm:ss" />
-				</el-form-item>
-				<el-form-item label="结束时间" prop="code">
-					<el-date-picker v-model="state.queryParams.endTime" type="datetime" placeholder="结束时间" value-format="YYYY-MM-DD HH:mm:ss" />
-				</el-form-item>
-				<el-form-item>
-					<el-button-group>
-						<el-button type="primary" icon="ele-Search" @click="handleQuery" v-auth="'sysFile:page'"> 查询 </el-button>
-						<el-button icon="ele-Refresh" @click="resetQuery"> 重置 </el-button>
-					</el-button-group>
-				</el-form-item>
-				<el-form-item>
-					<el-button type="primary" icon="ele-Plus" @click="openUploadDialog" v-auth="'sysFile:uploadFile'"> 上传 </el-button>
 				</el-form-item>
 			</el-form>
 		</el-card>
 
-		<el-card class="full-table" shadow="hover" style="margin-top: 5px">
-			<el-table :data="state.fileData" style="width: 100%" v-loading="state.loading" border>
-				<el-table-column type="index" label="序号" width="55" align="center" />
+		<el-card class="full-table" header-class="card_header" shadow="hover" style="margin-top: 5px">
+			<template #header>
+				<ButtonBar mode="sysFile" :buttonConfig="fileButtonConfig" displayStyle="inline"
+					:onButtonClick="handleButtonClick" />
+
+				<AdvancedSearch ref="searchRef" :fields="searchFields" :keywordFields="keywordFields"
+					mode="sysFile" :disableAutoQuery="true" @query="handleAdvancedQuery" @reset="handleAdvancedReset" />
+			</template>
+
+			<el-table ref="tableRef" :data="state.fileData" style="width: 100%" v-loading="state.loading" border
+				@selection-change="handleSelectionChange" @row-click="handleRowClick">
+				<el-table-column type="selection" width="55" align="center" fixed />
+				<el-table-column type="index" label="序号" width="55" align="center" fixed />
 				<el-table-column prop="fileName" label="名称" min-width="150" header-align="center" show-overflow-tooltip />
 				<el-table-column prop="suffix" label="后缀" align="center" show-overflow-tooltip>
 					<template #default="scope">
@@ -141,12 +133,12 @@
 			<vue-office-pdf :src="state.pdfUrl" style="height: 100vh" @rendered="renderedHandler" @error="errorHandler" />
 		</el-drawer>
 		<el-image-viewer v-if="state.showViewer" :url-list="state.previewList" :hideOnClickModal="true" @close="state.showViewer = false"></el-image-viewer>
-		<EditSysFile ref="editSysFileRef" title="编辑文件" @handleQuery="handleQuery" />
+		<EditSysFile ref="editSysFileRef" title="编辑文件" @handleQuery="handleAdvancedQuery(state.advancedConditions)" />
 	</div>
 </template>
 
 <script lang="ts" setup name="sysFile">
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, shallowRef } from 'vue';
 import { ElMessageBox, ElMessage, UploadInstance } from 'element-plus';
 import VueOfficeDocx from '@vue-office/docx';
 import VueOfficeExcel from '@vue-office/excel';
@@ -156,6 +148,9 @@ import '@vue-office/excel/lib/index.css';
 
 import EditSysFile from '/@/views/system/file/component/editSysfile.vue';
 import ModifyRecord from '/@/components/table/modifyRecord.vue';
+import ButtonBar from '/@/components/buttonBar/index.vue';
+import AdvancedSearch from '/@/components/advancedSearch/index.vue';
+import type { SearchField, QueryCondition } from '/@/components/advancedSearch/types';
 
 import { downloadByUrl } from '/@/utils/download';
 import { getAPI } from '/@/utils/axios-utils';
@@ -163,20 +158,38 @@ import {SysFileApi, SysTenantApi} from '/@/api-services/api';
 import { SysFile } from '/@/api-services/models';
 import { useUserInfo } from "/@/stores/userInfo";
 
-// const baseUrl = window.__env__.VITE_API_URL;
 const userStore = useUserInfo();
 const uploadRef = ref<UploadInstance>();
 const editSysFileRef = ref<InstanceType<typeof EditSysFile>>();
+const searchRef = ref();
+const tableRef = ref();
+const selectRows = shallowRef<any[]>([]);
+
+const searchFields: SearchField[] = [
+	{ label: '文件名称', prop: 'fileName', type: 'string' },
+	{ label: '创建时间', prop: 'createTime', type: 'datetimeRange' },
+];
+
+const keywordFields = ['fileName'];
+
+const handleRowClick = (row: any) => {
+	const table = tableRef.value;
+	if (!table) return;
+	table.toggleRowSelection(row);
+};
+
+const handleSelectionChange = (rows: any[]) => {
+	selectRows.value = rows;
+};
+
 const state = reactive({
 	loading: false,
 	tenantList: [] as Array<any>,
 	fileData: [] as Array<SysFile>,
 	queryParams: {
-		tenantId: undefined,
-		fileName: undefined,
-		startTime: undefined,
-		endTime: undefined,
+		tenantId: undefined as number | undefined,
 	},
+	advancedConditions: [] as QueryCondition[],
 	tableParams: {
 		page: 1,
 		pageSize: 50,
@@ -198,65 +211,126 @@ const state = reactive({
 	previewList: [] as string[],
 });
 
+const fileButtonConfig = {
+	base: {
+		type: 'group' as const,
+		childs: {
+			uploadFile: { type: 'button' as const, label: '上传', icon: 'ele-Upload', color: 'primary' as const },
+			update: { type: 'button' as const, label: '编辑', icon: 'ele-Edit', color: 'success' as const },
+			delete: { type: 'button' as const, label: '删除', icon: 'ele-Delete', color: 'danger' as const },
+		}
+	},
+};
+
+const handleButtonClick = (key: string) => {
+	switch (key) {
+		case 'uploadFile': openUploadDialog(); break;
+		case 'update': handleBatchUpdate(); break;
+		case 'delete': handleBatchDelete(); break;
+	}
+};
+
+const validateSelection = (minCount = 1, maxCount?: number): boolean => {
+	if (selectRows.value.length < minCount) {
+		ElMessage.warning(`请至少选择${minCount}条记录`);
+		return false;
+	}
+	if (maxCount && selectRows.value.length > maxCount) {
+		ElMessage.warning(`最多选择${maxCount}条记录`);
+		return false;
+	}
+	return true;
+};
+
+const handleBatchUpdate = () => {
+	if (!validateSelection(1, 1)) return;
+	openEditSysFile(selectRows.value[0]);
+};
+
+const handleBatchDelete = () => {
+	if (!validateSelection()) return;
+	const fileNames = selectRows.value.map((r: any) => r.fileName).join('、');
+	ElMessageBox.confirm(`确定要删除文件「${fileNames}」吗?`, '提示', {
+		confirmButtonText: '确定',
+		cancelButtonText: '取消',
+		type: 'warning',
+	}).then(async () => {
+		state.loading = true;
+		const ids = selectRows.value.map((r: any) => r.id);
+		await Promise.all(ids.map((id: any) => getAPI(SysFileApi).apiSysFileDeletePost({ id })));
+		await handleAdvancedQuery(state.advancedConditions);
+		selectRows.value = [];
+		ElMessage.success('删除成功');
+	}).catch(() => { });
+};
+
 onMounted(async () => {
 	if (userStore.userInfos.accountType == 999) {
 		state.tenantList = await getAPI(SysTenantApi).apiSysTenantListGet().then(res => res.data.result ?? []);
-		state.queryParams.tenantId = state.tenantList[0].value;
+		if (state.tenantList.length > 0) {
+			state.queryParams.tenantId = state.tenantList[0].value;
+		}
 	}
-	handleQuery();
+	await handleAdvancedQuery([]);
 });
 
-// 查询操作
-const handleQuery = async () => {
-	if (state.queryParams.startTime == null) state.queryParams.startTime = undefined;
-	if (state.queryParams.endTime == null) state.queryParams.endTime = undefined;
+const handleTenantChange = () => {
+	handleAdvancedQuery(state.advancedConditions);
+};
 
+const handleAdvancedQuery = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = conditions;
 	state.loading = true;
-	let params = Object.assign(state.queryParams, state.tableParams);
-	var res = await getAPI(SysFileApi).apiSysFilePagePost(params);
-	console.log(res);
-	state.fileData = res.data.result?.items ?? [];
-	state.tableParams.total = res.data.result?.total;
+
+	const keywordValue = searchRef.value?.getKeyword?.() || '';
+
+	let params: any = {
+		page: state.tableParams.page,
+		pageSize: state.tableParams.pageSize,
+		keyword: keywordValue,
+		keywordFields: keywordFields,
+		conditions: conditions,
+		tenantId: state.queryParams.tenantId,
+	};
+
+	try {
+		let res = await getAPI(SysFileApi).apiSysFilePageAdvancedPost(params);
+		state.fileData = res.data.result?.items ?? [];
+		state.tableParams.total = res.data.result?.total;
+	} catch (error) {
+		console.error('查询失败:', error);
+	}
 	state.loading = false;
 };
 
-// 重置操作
-const resetQuery = () => {
-	state.queryParams.fileName = undefined;
-	state.queryParams.startTime = undefined;
-	state.queryParams.endTime = undefined;
-	handleQuery();
+const handleAdvancedReset = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = [];
+	await handleAdvancedQuery([]);
 };
 
-// 打开上传页面
 const openUploadDialog = () => {
 	state.fileList = [];
 	state.dialogUploadVisible = true;
 	state.isPublic = false;
 };
 
-// 通过onChanne方法获得文件列表
 const handleChange = (file: any, fileList: []) => {
 	state.fileList = fileList;
 };
 
-// 上传
 const uploadFile = async () => {
 	if (state.fileList.length < 1) return;
 	await getAPI(SysFileApi).apiSysFileUploadFilePostForm(state.fileList[0].raw, state.fileType, state.isPublic, undefined);
-	handleQuery();
+	handleAdvancedQuery(state.advancedConditions);
 	ElMessage.success('上传成功');
 	state.dialogUploadVisible = false;
 };
 
-// 下载
 const downloadFile = async (row: any) => {
-	// var res = await getAPI(SysFileApi).sysFileDownloadPost({ id: row.id });
 	var fileUrl = getFileUrl(row);
 	downloadByUrl({ url: fileUrl });
 };
 
-// 删除
 const delFile = (row: any) => {
 	ElMessageBox.confirm(`确定删除文件：【${row.fileName}】?`, '提示', {
 		confirmButtonText: '确定',
@@ -265,13 +339,12 @@ const delFile = (row: any) => {
 	})
 		.then(async () => {
 			await getAPI(SysFileApi).apiSysFileDeletePost({ id: row.id });
-			handleQuery();
+			handleAdvancedQuery(state.advancedConditions);
 			ElMessage.success('删除成功');
 		})
 		.catch(() => {});
 };
 
-// 打开文件预览页面
 const openFilePreviewDialog = async (row: any) => {
 	if (row.suffix == '.pdf') {
 		state.fileName = `【${row.fileName}${row.suffix}】`;
@@ -293,19 +366,24 @@ const openFilePreviewDialog = async (row: any) => {
 	}
 };
 
-// 改变页面容量
-const handleSizeChange = (val: number) => {
+const handleSizeChange = async (val: number) => {
 	state.tableParams.pageSize = val;
-	handleQuery();
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
 };
 
-// 改变页码序号
-const handleCurrentChange = (val: number) => {
+const handleCurrentChange = async (val: number) => {
 	state.tableParams.page = val;
-	handleQuery();
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
 };
 
-// 获取文件地址
 const getFileUrl = (row: SysFile): string => {
 	if (row.bucketName == 'Local') {
 		return `/${row.filePath}/${row.id}${row.suffix}`;
@@ -314,13 +392,20 @@ const getFileUrl = (row: SysFile): string => {
 	}
 };
 
-// 打开编辑页面
 const openEditSysFile = (row: any) => {
 	editSysFileRef.value?.openDialog(row);
 };
 
-// 文件渲染完成
 const renderedHandler = () => {};
-// 文件渲染失败
 const errorHandler = () => {};
 </script>
+
+<style scoped lang="scss">
+.sys-file-container {
+	height: 100%;
+}
+
+:deep(.card_header) {
+	padding: 0 3px 3px 3px;
+}
+</style>

@@ -40,6 +40,24 @@ public class SysRegionService : IDynamicApiController, ITransient
     }
 
     /// <summary>
+    /// 获取行政区域分页列表（高级查询） 🔖
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [DisplayName("获取行政区域分页列表（高级查询）")]
+    public virtual async Task<SqlSugarPagedList<SysRegion>> PageAdvanced(PageAdvancedInput input)
+    {
+        var pidCondition = input.Conditions.FirstOrDefault(t => t.Field.Trim() == "pid");
+        var pid = pidCondition != null ? pidCondition.Value.ParseToLong() : 0;
+        var query = _sysRegionRep.AsQueryable()
+            .WhereIF(pid > 0, u => u.Pid == pid || u.Id == pid)
+            .ApplyKeywordSearch(input.KeywordFields, input.Keyword)
+            .ApplyAdvancedQuery(input.Conditions)
+            .OrderBy(u => new { u.Id });
+        return await query.ToPagedListAsync(input.Page, input.PageSize);
+    }
+
+    /// <summary>
     /// 获取行政区域列表 🔖
     /// </summary>
     /// <param name="input"></param>

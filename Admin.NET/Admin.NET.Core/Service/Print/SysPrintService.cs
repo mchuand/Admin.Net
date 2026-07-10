@@ -1,4 +1,4 @@
-﻿// Admin.NET 项目的版权、商标、专利和其他相关权利均受相应法律法规的保护。使用本项目应遵守相关法律法规和许可证的要求。
+// Admin.NET 项目的版权、商标、专利和其他相关权利均受相应法律法规的保护。使用本项目应遵守相关法律法规和许可证的要求。
 //
 // 本项目主要遵循 MIT 许可证和 Apache 许可证（版本 2.0）进行分发和使用。许可证位于源代码树根目录中的 LICENSE-MIT 和 LICENSE-APACHE 文件。
 //
@@ -32,6 +32,23 @@ public class SysPrintService : IDynamicApiController, ITransient
         return await _sysPrintRep.AsQueryable()
             .WhereIF(_userManager.SuperAdmin && input.TenantId > 0, u => u.TenantId == input.TenantId)
             .WhereIF(!string.IsNullOrWhiteSpace(input.Name), u => u.Name.Contains(input.Name))
+            .OrderBy(u => new { u.OrderNo, u.Id })
+            .ToPagedListAsync(input.Page, input.PageSize);
+    }
+
+    /// <summary>
+    /// 获取打印模板列表（高级查询）🖨️
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [ApiDescriptionSettings(Name = "PageAdvanced"), HttpPost]
+    [DisplayName("获取打印模板列表（高级查询）")]
+    public async Task<SqlSugarPagedList<SysPrint>> PageAdvanced(PageAdvancedInput input)
+    {
+        return await _sysPrintRep.AsQueryable()
+            .WhereIF(_userManager.SuperAdmin && input.Conditions.Any(t => t.Field.Trim() == "tenantId"), u => u.TenantId == input.Conditions.First(t => t.Field.Trim() == "tenantId").Value.ParseToLong())
+            .ApplyKeywordSearch(input.KeywordFields, input.Keyword)
+            .ApplyAdvancedQuery(input.Conditions)
             .OrderBy(u => new { u.OrderNo, u.Id })
             .ToPagedListAsync(input.Page, input.PageSize);
     }

@@ -69,6 +69,26 @@ public class SysFileService : IDynamicApiController, ITransient
     }
 
     /// <summary>
+    /// 获取文件分页列表（高级查询） 🔖
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [DisplayName("获取文件分页列表（高级查询）")]
+    public virtual async Task<SqlSugarPagedList<SysFile>> PageAdvanced(PageAdvancedInput input)
+    {
+        // 获取所有公开附件
+        var publicList = _sysFileRep.AsQueryable().ClearFilter().Where(u => u.IsPublic == true);
+        // 获取私有附件
+        var privateList = _sysFileRep.AsQueryable().Where(u => u.IsPublic == false);
+        // 合并公开和私有附件并分页
+        var query = _sysFileRep.Context.UnionAll(publicList, privateList)
+            .ApplyKeywordSearch(input.KeywordFields, input.Keyword)
+            .ApplyAdvancedQuery(input.Conditions)
+            .OrderBy(u => u.CreateTime, OrderByType.Desc);
+        return await query.ToPagedListAsync(input.Page, input.PageSize);
+    }
+
+    /// <summary>
     /// 上传文件Base64 🔖
     /// </summary>
     /// <param name="input"></param>

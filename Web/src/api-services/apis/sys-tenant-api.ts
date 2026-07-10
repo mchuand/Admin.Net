@@ -27,6 +27,7 @@ import { AdminResultSqlSugarPagedListTenantOutput } from '../models';
 import { AdminResultString } from '../models';
 import { BaseIdInput } from '../models';
 import { DeleteTenantInput } from '../models';
+import { PageAdvancedInput } from '../models';
 import { PageTenantInput } from '../models';
 import { TenantIdInput } from '../models';
 import { TenantInput } from '../models';
@@ -364,6 +365,54 @@ export const SysTenantApiAxiosParamCreator = function (configuration?: Configura
             localVarUrlObj.search = (new URLSearchParams(query)).toString();
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: localVarUrlObj.pathname + localVarUrlObj.search + localVarUrlObj.hash,
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary 获取租户高级查询分页列表 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiSysTenantPageAdvancedPost: async (body?: PageAdvancedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/sysTenant/pageAdvanced`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, 'https://example.com');
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+            const localVarRequestOptions :AxiosRequestConfig = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            // http bearer authentication required
+            if (configuration && configuration.accessToken) {
+                const accessToken = typeof configuration.accessToken === 'function'
+                    ? await configuration.accessToken()
+                    : await configuration.accessToken;
+                localVarHeaderParameter["Authorization"] = "Bearer " + accessToken;
+            }
+
+            localVarHeaderParameter['Content-Type'] = 'application/json-patch+json';
+
+            const query = new URLSearchParams(localVarUrlObj.search);
+            for (const key in localVarQueryParameter) {
+                query.set(key, localVarQueryParameter[key]);
+            }
+            for (const key in options.params) {
+                query.set(key, options.params[key]);
+            }
+            localVarUrlObj.search = (new URLSearchParams(query)).toString();
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            const needsSerialization = (typeof body !== "string") || localVarRequestOptions.headers['Content-Type'] === 'application/json';
+            localVarRequestOptions.data =  needsSerialization ? JSON.stringify(body !== undefined ? body : {}) : (body || "");
 
             return {
                 url: localVarUrlObj.pathname + localVarUrlObj.search + localVarUrlObj.hash,
@@ -818,6 +867,20 @@ export const SysTenantApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary 获取租户高级查询分页列表 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysTenantPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListTenantOutput>>> {
+            const localVarAxiosArgs = await SysTenantApiAxiosParamCreator(configuration).apiSysTenantPageAdvancedPost(body, options);
+            return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
+                const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
+                return axios.request(axiosRequestArgs);
+            };
+        },
+        /**
+         * 
          * @summary 获取租户分页列表 🔖
          * @param {PageTenantInput} [body] 
          * @param {*} [options] Override http request option.
@@ -994,6 +1057,16 @@ export const SysTenantApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
+         * @summary 获取租户高级查询分页列表 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysTenantPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListTenantOutput>> {
+            return SysTenantApiFp(configuration).apiSysTenantPageAdvancedPost(body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary 获取租户分页列表 🔖
          * @param {PageTenantInput} [body] 
          * @param {*} [options] Override http request option.
@@ -1147,6 +1220,17 @@ export class SysTenantApi extends BaseAPI {
      */
     public async apiSysTenantListGet(options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultObject>> {
         return SysTenantApiFp(this.configuration).apiSysTenantListGet(options).then((request) => request(this.axios, this.basePath));
+    }
+    /**
+     * 
+     * @summary 获取租户高级查询分页列表 🔖
+     * @param {PageAdvancedInput} [body] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SysTenantApi
+     */
+    public async apiSysTenantPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListTenantOutput>> {
+        return SysTenantApiFp(this.configuration).apiSysTenantPageAdvancedPost(body, options).then((request) => request(this.axios, this.basePath));
     }
     /**
      * 

@@ -4,27 +4,22 @@
 			<pane size="20">
 				<RegionTree ref="regionTreeRef" @node-click="nodeClick" />
 			</pane>
-			<pane size="80">
-				<el-card class="full-table" shadow="hover">
-					<el-form :model="state.queryParams" ref="queryForm" :inline="true">
-						<el-form-item label="行政名称">
-							<el-input v-model="state.queryParams.name" placeholder="行政名称" clearable />
-						</el-form-item>
-						<el-form-item label="行政代码">
-							<el-input v-model="state.queryParams.code" placeholder="行政代码" clearable />
-						</el-form-item>
-						<el-form-item>
-							<el-button-group>
-								<el-button type="primary" icon="ele-Search" @click="handleQuery" v-auth="'sysRegion:page'"> 查询 </el-button>
-								<el-button icon="ele-Refresh" @click="resetQuery"> 重置 </el-button>
-							</el-button-group>
-						</el-form-item>
-						<el-form-item>
-							<el-button type="primary" icon="ele-Plus" @click="openAddRegion" v-auth="'sysRegion:add'"> 新增 </el-button>
-							<el-button type="danger" icon="ele-Lightning" @click="handlSync" v-auth="'sysRegion:sync'"> 同步统计局 </el-button>
-						</el-form-item>
-					</el-form>
-					<el-table :data="state.regionData" style="width: 100%" v-loading="state.loading" row-key="id" default-expand-all :tree-props="{ children: 'children', hasChildren: 'hasChildren' }" border>
+			<pane size="80" style="overflow: auto;">
+				<el-card class="full-table" header-class="card_header" shadow="hover" style="margin-top: 5px">
+					<template #header>
+						<!-- 按钮栏组件 -->
+						<ButtonBar mode="sysRegion" :buttonConfig="regionButtonConfig" displayStyle="inline"
+							:onButtonClick="handleButtonClick" />
+
+						<!-- 高级查询组件 -->
+						<AdvancedSearch ref="searchRef" :fields="searchFields" :keywordFields="keywordFields"
+							mode="sysRegion" :disableAutoQuery="true" @query="handleAdvancedQuery" @reset="handleAdvancedReset" />
+					</template>
+
+					<el-table ref="tableRef" :data="state.regionData" style="width: 100%" v-loading="state.loading"
+						row-key="id" default-expand-all :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+						border @selection-change="handleSelectionChange" @row-click="handleRowClick">
+						<el-table-column type="selection" width="55" align="center" fixed />
 						<el-table-column prop="name" label="行政名称" align="center" show-overflow-tooltip />
 						<el-table-column prop="code" label="行政代码" align="center" show-overflow-tooltip />
 						<el-table-column prop="cityCode" label="区号" align="center" show-overflow-tooltip />
@@ -32,38 +27,33 @@
 						<el-table-column prop="remark" label="备注" header-align="center" show-overflow-tooltip />
 						<el-table-column label="操作" width="140" fixed="right" align="center" show-overflow-tooltip>
 							<template #default="scope">
-								<el-button icon="ele-Edit" size="small" text type="primary" @click="openEditRegion(scope.row)" v-auth="'sysRegion:update'"> 编辑 </el-button>
-								<el-button icon="ele-Delete" size="small" text type="danger" @click="delRegion(scope.row)" v-auth="'sysRegion:delete'"> 删除 </el-button>
+								<el-button icon="ele-Edit" size="small" text type="primary"
+									@click="openEditRegion(scope.row)" v-auth="'sysRegion:update'"> 编辑 </el-button>
+								<el-button icon="ele-Delete" size="small" text type="danger"
+									@click="delRegion(scope.row)" v-auth="'sysRegion:delete'"> 删除 </el-button>
 							</template>
 						</el-table-column>
 					</el-table>
-					<el-pagination
-						v-model:currentPage="state.tableParams.page"
-						v-model:page-size="state.tableParams.pageSize"
-						:total="state.tableParams.total"
-						:page-sizes="[10, 20, 50, 100]"
-						size="small"
-						background
-						@size-change="handleSizeChange"
-						@current-change="handleCurrentChange"
-						layout="total, sizes, prev, pager, next, jumper"
-					/>
 				</el-card>
 			</pane>
 		</splitpanes>
 
-		<EditRegion ref="editRegionRef" :title="state.editRegionTitle" @handleQuery="handleQuery" />
+		<EditRegion ref="editRegionRef" :title="state.editRegionTitle"
+			@handleQuery="handleAdvancedQuery(state.advancedConditions)" />
 	</div>
 </template>
 
 <script lang="ts" setup name="sysRegion">
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, shallowRef } from 'vue';
 import { ElMessageBox, ElMessage, ElNotification } from 'element-plus';
 import { Splitpanes, Pane } from 'splitpanes';
 import 'splitpanes/dist/splitpanes.css';
 
 import RegionTree from '/@/views/system/region/component/regionTree.vue';
 import EditRegion from '/@/views/system/region/component/editRegion.vue';
+import ButtonBar from '/@/components/buttonBar/index.vue';
+import AdvancedSearch from '/@/components/advancedSearch/index.vue';
+import type { SearchField, QueryCondition } from '/@/components/advancedSearch/types';
 
 import { getAPI } from '/@/utils/axios-utils';
 import { SysRegionApi } from '/@/api-services/api';
@@ -71,44 +61,141 @@ import { SysRegion } from '/@/api-services/models';
 
 const editRegionRef = ref<InstanceType<typeof EditRegion>>();
 const regionTreeRef = ref<InstanceType<typeof RegionTree>>();
+const searchRef = ref();
+const tableRef = ref();
+const selectRows = shallowRef<any[]>([]);
+
+// 搜索字段配置
+const searchFields: SearchField[] = [
+	{ label: '行政名称', prop: 'name', type: 'string' },
+	{ label: '行政代码', prop: 'code', type: 'string' },
+];
+
+// 关键字搜索字段列表
+const keywordFields = ['name', 'code'];
+
+// 表格选中
+const handleRowClick = (row: any) => {
+	const table = tableRef.value;
+	if (!table) return;
+	table.toggleRowSelection(row);
+};
+
+const handleSelectionChange = (rows: any[]) => {
+	selectRows.value = rows;
+};
+
 const state = reactive({
 	loading: false,
-	regionData: [] as Array<SysRegion>, // 列表数据
+	regionData: [] as Array<SysRegion>,
 	queryParams: {
 		id: -1,
-		pid: undefined,
-		name: undefined,
-		code: undefined,
+		pid: undefined as number | undefined,
 	},
-	tableParams: {
-		page: 1,
-		pageSize: 50,
-		total: 0 as any,
-	},
+	advancedConditions: [] as QueryCondition[],
 	editRegionTitle: '',
 });
 
+// 按钮栏配置
+const regionButtonConfig = {
+	base: {
+		type: 'group' as const,
+		childs: {
+			add: { type: 'button' as const, label: '新增', icon: 'ele-Plus', color: 'primary' as const },
+			update: { type: 'button' as const, label: '修改', icon: 'ele-Edit', color: 'success' as const },
+			delete: { type: 'button' as const, label: '删除', icon: 'ele-Delete', color: 'danger' as const },
+		}
+	},
+	tool: {
+		type: 'group' as const,
+		childs: {
+			sync: { type: 'button' as const, label: '同步统计局', icon: 'ele-Lightning', color: 'danger' as const },
+		}
+	},
+};
+
+// 按钮栏点击事件
+const handleButtonClick = (key: string) => {
+	switch (key) {
+		case 'add': openAddRegion(); break;
+		case 'sync': handlSync(); break;
+		case 'update': handleBatchUpdate(); break;
+		case 'delete': handleBatchDelete(); break;
+	}
+};
+
+// 校验选中行
+const validateSelection = (minCount = 1, maxCount?: number): boolean => {
+	if (selectRows.value.length < minCount) {
+		ElMessage.warning(`请至少选择${minCount}条记录`);
+		return false;
+	}
+	if (maxCount && selectRows.value.length > maxCount) {
+		ElMessage.warning(`最多选择${maxCount}条记录`);
+		return false;
+	}
+	return true;
+};
+
+// 批量编辑
+const handleBatchUpdate = () => {
+	if (!validateSelection(1, 1)) return;
+	openEditRegion(selectRows.value[0]);
+};
+
+// 批量删除
+const handleBatchDelete = () => {
+	if (!validateSelection()) return;
+	const names = selectRows.value.map((r: any) => r.name).join('、');
+	ElMessageBox.confirm(`确定要删除行政区域「${names}」吗?`, '提示', {
+		confirmButtonText: '确定',
+		cancelButtonText: '取消',
+		type: 'warning',
+	}).then(async () => {
+		state.loading = true;
+		const ids = selectRows.value.map((r: any) => r.id);
+		await Promise.all(ids.map((id: any) => getAPI(SysRegionApi).apiSysRegionDeletePost({ id })));
+		await handleAdvancedQuery(state.advancedConditions);
+		selectRows.value = [];
+		regionTreeRef.value?.initTreeData();
+		ElMessage.success('删除成功');
+	}).catch(() => { });
+};
+
 onMounted(async () => {
-	await handleQuery();
+	await handleAdvancedQuery([]);
 });
 
-// 查询操作
-const handleQuery = async () => {
+// 高级查询（所有查询统一走此方法）
+const handleAdvancedQuery = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = conditions;
 	state.loading = true;
-	let params = Object.assign(state.queryParams, state.tableParams);
-	let res = await getAPI(SysRegionApi).apiSysRegionPagePost(params);
-	state.regionData = res.data.result?.items ?? [];
-	state.tableParams.total = res.data.result?.total;
+
+	const keywordValue = searchRef.value?.getKeyword?.() || '';
+
+	let params = {
+		page: 1,
+		pageSize: 9999,
+		pid: state.queryParams.pid,
+		keyword: keywordValue,
+		keywordFields: keywordFields,
+		conditions: conditions
+	};
+
+	try {
+		let res = await getAPI(SysRegionApi).apiSysRegionPageAdvancedPost(params as any);
+		state.regionData = res.data.result?.items ?? [];
+	} catch (error) {
+		console.error('查询失败:', error);
+	}
 	state.loading = false;
 };
 
-// 重置操作
-const resetQuery = async () => {
-	state.queryParams.id = -1;
+// 高级查询重置
+const handleAdvancedReset = async (conditions: QueryCondition[]) => {
 	state.queryParams.pid = undefined;
-	state.queryParams.name = undefined;
-	state.queryParams.code = undefined;
-	await handleQuery();
+	state.advancedConditions = [];
+	await handleAdvancedQuery([]);
 };
 
 // 打开新增页面
@@ -132,8 +219,7 @@ const delRegion = (row: any) => {
 	})
 		.then(async () => {
 			await getAPI(SysRegionApi).apiSysRegionDeletePost({ id: row.id });
-			await handleQuery();
-			// 编辑删除后更新机构数据
+			await handleAdvancedQuery(state.advancedConditions);
 			regionTreeRef.value?.initTreeData();
 			ElMessage.success('删除成功');
 		})
@@ -143,9 +229,7 @@ const delRegion = (row: any) => {
 // 树组件点击
 const nodeClick = async (node: any) => {
 	state.queryParams.pid = node.id;
-	state.queryParams.name = undefined;
-	state.queryParams.code = undefined;
-	await handleQuery();
+	await handleAdvancedQuery(state.advancedConditions);
 };
 
 // 同步国家统计局操作
@@ -166,16 +250,26 @@ const handlSync = async () => {
 		})
 		.catch(() => {});
 };
-
-// 改变页面容量
-const handleSizeChange = async (val: number) => {
-	state.tableParams.pageSize = val;
-	await handleQuery();
-};
-
-// 改变页码序号
-const handleCurrentChange = async (val: number) => {
-	state.tableParams.page = val;
-	await handleQuery();
-};
 </script>
+
+<style scoped lang="scss">
+.sys-region-container {
+	height: 100%;
+	display: flex;
+	flex-direction: row !important;
+}
+
+:deep(.splitpanes) {
+	height: 100%;
+}
+
+:deep(.card_header) {
+	padding: 0 3px 3px 3px;
+}
+
+:deep(.splitpanes__pane) {
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+</style>

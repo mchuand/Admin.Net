@@ -1,5 +1,5 @@
 <template>
-	<div class="sys-open-access-container">
+	<div class="sys-generateSign-container">
 		<el-dialog v-model="state.isShowDialog" draggable :close-on-click-modal="false" width="600px">
 			<template #header>
 				<div style="color: #fff">

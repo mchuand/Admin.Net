@@ -25,7 +25,7 @@ export interface QueryCondition {
 export interface SearchField {
 	label: string;
 	prop: string;
-	type?: 'string' | 'number' | 'numberRange' | 'date' | 'dateRange' | 'dic' | 'dicRange' | 'select';
+	type?: 'string' | 'number' | 'numberRange' | 'date' | 'dateRange' | 'datetime' | 'datetimeRange' | 'dic' | 'dicRange' | 'select';
 	placeholder?: string;
 	dicCode?: string;
 	options?: { label: string; value: any }[];
@@ -33,6 +33,7 @@ export interface SearchField {
 	defaultValue?: any;
 	compare?: CompareEnum;
 	required?: boolean;
+	visible?:boolean;
 }
 
 export interface SettingField {

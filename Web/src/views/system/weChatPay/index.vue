@@ -1,28 +1,21 @@
 <template>
 	<div class="weChatPay-container">
-		<el-card shadow="hover" :body-style="{ paddingBottom: '0' }">
-			<el-form :model="state.queryParams" ref="queryForm" :inline="true">
-				<el-form-item label="订单号">
-					<el-input v-model="state.queryParams.keyword" clearable placeholder="请输入订单号" />
-				</el-form-item>
-				<el-form-item label="创建时间">
-					<el-date-picker placeholder="请选择创建时间" value-format="YYYY/MM/DD" type="daterange" v-model="state.queryParams.createTimeRange" />
-				</el-form-item>
-				<el-form-item>
-					<el-button-group>
-						<el-button type="primary" icon="ele-Search" @click="handleQuery"> 查询 </el-button>
-						<el-button icon="ele-Refresh" @click="resetQuery"> 重置 </el-button>
-					</el-button-group>
-				</el-form-item>
-				<el-form-item>
-					<el-button type="primary" icon="ele-Plus" @click="openAddDialog">新增模拟数据</el-button>
-				</el-form-item>
-			</el-form>
-		</el-card>
 
-		<el-card class="full-table" shadow="hover" style="margin-top: 5px">
-			<el-table :data="state.tableData" style="width: 100%" v-loading="state.loading" border>
-				<el-table-column type="index" label="序号" width="55" align="center" />
+		<el-card class="full-table" header-class="card_header" shadow="hover" style="margin-top: 5px">
+			<template #header>
+				<!-- 按钮栏组件 -->
+				<ButtonBar mode="sysWechatPay" :buttonConfig="wechatPayButtonConfig" displayStyle="inline"
+					:onButtonClick="handleButtonClick" />
+
+				<!-- 高级查询组件 -->
+				<AdvancedSearch ref="searchRef" :fields="searchFields" :keywordFields="keywordFields"
+					mode="sysWechatPay" :disableAutoQuery="true" @query="handleAdvancedQuery" @reset="handleAdvancedReset" />
+			</template>
+
+			<el-table ref="tableRef" :data="state.tableData" style="width: 100%" v-loading="state.loading" border
+				@selection-change="handleSelectionChange" @row-click="handleRowClick">
+				<el-table-column type="selection" width="55" align="center" fixed />
+				<el-table-column type="index" label="序号" width="55" align="center" fixed />
 				<el-table-column prop="outTradeNumber" label="商户订单号" width="180"></el-table-column>
 				<el-table-column prop="transactionId" label="支付订单号" width="220"></el-table-column>
 				<el-table-column prop="description" label="描述" width="180"></el-table-column>
@@ -131,27 +124,51 @@
 </template>
 
 <script setup lang="ts" name="weChatPay">
-import { ref, nextTick, onMounted, reactive } from 'vue';
+import { ref, nextTick, onMounted, reactive, shallowRef } from 'vue';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import QRCode from 'qrcodejs2-fixes';
-import { pagePayList, createPay, getRefundListByID, refundDomestic } from '/@/api/system/weChatPay';
+import ButtonBar from '/@/components/buttonBar/index.vue';
+import AdvancedSearch from '/@/components/advancedSearch/index.vue';
+import type { SearchField, QueryCondition } from '/@/components/advancedSearch/types';
+import { getAPI } from '/@/utils/axios-utils';
+import { SysWechatPayApi } from '/@/api-services/api';
 import { SysWechatPay } from '/@/api-services/models';
 
 const qrDiv = ref<HTMLElement | null>(null);
 const showAddDialog = ref(false);
 const showQrDialog = ref(false);
 const showRefundDialog = ref(false);
+const searchRef = ref();
+const tableRef = ref();
+const selectRows = shallowRef<any[]>([]);
 
 const subTableData = ref<any>([]);
 const addData = ref<any>({});
 
+// 搜索字段配置
+const searchFields: SearchField[] = [
+	{ label: '订单号', prop: 'keyword', type: 'string' },
+	{ label: '创建时间', prop: 'createTime', type: 'dateRange' },
+];
+
+// 关键字搜索字段列表
+const keywordFields = ['outTradeNumber', 'transactionId'];
+
+// 表格选中
+const handleRowClick = (row: any) => {
+	const table = tableRef.value;
+	if (!table) return;
+	table.toggleRowSelection(row);
+};
+
+const handleSelectionChange = (rows: any[]) => {
+	selectRows.value = rows;
+};
+
 const state = reactive({
 	loading: false,
 	tableData: [] as Array<SysWechatPay>,
-	queryParams: {
-		keyword: undefined,
-		createTimeRange: undefined,
-	},
+	advancedConditions: [] as QueryCondition[],
 	tableParams: {
 		page: 1,
 		pageSize: 50,
@@ -160,27 +177,69 @@ const state = reactive({
 	editTenantTitle: '',
 });
 
-// 页面初始化
+// 按钮栏配置
+const wechatPayButtonConfig = {
+	base: {
+		type: 'group' as const,
+		childs: {
+			add: { type: 'button' as const, label: '新增模拟数据', icon: 'ele-Plus', color: 'primary' as const },
+		}
+	},
+};
+
+// 按钮栏点击事件
+const handleButtonClick = (key: string) => {
+	switch (key) {
+		case 'add': openAddDialog(); break;
+	}
+};
+
+// 校验选中行
+const validateSelection = (minCount = 1, maxCount?: number): boolean => {
+	if (selectRows.value.length < minCount) {
+		ElMessage.warning(`请至少选择${minCount}条记录`);
+		return false;
+	}
+	if (maxCount && selectRows.value.length > maxCount) {
+		ElMessage.warning(`最多选择${maxCount}条记录`);
+		return false;
+	}
+	return true;
+};
+
 onMounted(async () => {
-	handleQuery();
+	await handleAdvancedQuery([]);
 });
 
-// 查询操作
-const handleQuery = async () => {
+// 高级查询（所有查询统一走此方法）
+const handleAdvancedQuery = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = conditions;
 	state.loading = true;
-	let params = Object.assign(state.queryParams, state.tableParams);
-	var res = await pagePayList(params);
-	let tmpRows = res.data.result?.items ?? [];
-	state.tableData = tmpRows;
-	state.tableParams.total = res.data.result?.total;
+
+	const keywordValue = searchRef.value?.getKeyword?.() || '';
+
+	let params = {
+		page: state.tableParams.page,
+		pageSize: state.tableParams.pageSize,
+		keyword: keywordValue,
+		keywordFields: keywordFields,
+		conditions: conditions
+	};
+
+	try {
+		let res = await getAPI(SysWechatPayApi).apiSysWechatPayPageAdvancedPost(params as any);
+		state.tableData = res.data.result?.items ?? [];
+		state.tableParams.total = res.data.result?.total;
+	} catch (error) {
+		console.error('查询失败:', error);
+	}
 	state.loading = false;
 };
 
-// 重置操作
-const resetQuery = () => {
-	state.queryParams.keyword = undefined;
-	state.queryParams.createTimeRange = undefined;
-	handleQuery();
+// 高级查询重置
+const handleAdvancedReset = async (conditions: QueryCondition[]) => {
+	state.advancedConditions = [];
+	await handleAdvancedQuery([]);
 };
 
 // 退款
@@ -190,12 +249,12 @@ const doRefund = async (orderInfo: any) => {
 		cancelButtonText: '取消',
 	})
 		.then(async ({ value }) => {
-			let resp = await refundDomestic({
+			let resp = await getAPI(SysWechatPayApi).apiSysWechatPayRefundDomesticPost({
 				tradeId: orderInfo.outTradeNumber,
 				reason: value,
 				refund: orderInfo.total,
 				total: orderInfo.total,
-			});
+			} as any);
 			if (resp.data.code == 200) {
 				ElMessage.success(`【${value}】退款申请成功`);
 			} else {
@@ -243,7 +302,7 @@ const openQrDialog = (code: string) => {
 
 // 打开退款页面
 const openRefundDialog = async (code: string) => {
-	var res = await getRefundListByID(code);
+	var res = await getAPI(SysWechatPayApi).apiSysWechatPayListRefundPost(code as any);
 	if (res.data.code === 200) {
 		let tmpRows = res.data.result ?? [];
 		subTableData.value = tmpRows;
@@ -255,26 +314,44 @@ const openRefundDialog = async (code: string) => {
 
 // 保存数据
 const saveData = async () => {
-	var res = await createPay(addData.value);
+	var res = await getAPI(SysWechatPayApi).apiSysWechatPayPayTransactionNativePost(addData.value);
 	if (res.data.code === 200) {
 		closeAddDialog();
 		let code = res.data.result.qrcodeUrl;
 		openQrDialog(code);
-		handleQuery();
+		handleAdvancedQuery(state.advancedConditions);
 	} else {
 		ElMessage.error('新建失败，' + res.data.message);
 	}
 };
 
 // 改变页面容量
-const handleSizeChange = (val: number) => {
+const handleSizeChange = async (val: number) => {
 	state.tableParams.pageSize = val;
-	handleQuery();
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
 };
 
 // 改变页码序号
-const handleCurrentChange = (val: number) => {
+const handleCurrentChange = async (val: number) => {
 	state.tableParams.page = val;
-	handleQuery();
+	if (state.advancedConditions.length > 0) {
+		await handleAdvancedQuery(state.advancedConditions);
+	} else {
+		await handleAdvancedQuery([]);
+	}
 };
 </script>
+
+<style scoped lang="scss">
+.weChatPay-container {
+	height: 100%;
+}
+
+:deep(.card_header) {
+	padding: 0 3px 3px 3px;
+}
+</style>

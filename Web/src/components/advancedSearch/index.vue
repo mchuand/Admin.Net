@@ -375,11 +375,11 @@ const initSettingState = () => {
 			keywordVisible.value = cached.keywordVisible;
 		}
 	} else {
-		visibleProps.value = props.fields.map((f) => f.prop);
-		settingFields.value = props.fields.map((f) => ({
+		visibleProps.value = props.fields.slice(0, 2).map((f) => f.prop);
+		settingFields.value = props.fields.map((f, index) => ({
 			label: f.label,
 			prop: f.prop,
-			visible: true,
+			visible: index < 2,
 		}));
 		keywordVisible.value = true;
 	}
@@ -490,7 +490,7 @@ const initParams = () => {
 		if (field.type === 'numberRange') {
 			queryParams[`${field.prop}Start`] = cachedParams?.[`${field.prop}Start`] ?? field.defaultValue?.[0] ?? undefined;
 			queryParams[`${field.prop}End`] = cachedParams?.[`${field.prop}End`] ?? field.defaultValue?.[1] ?? undefined;
-		} else if (field.type === 'dateRange' || field.type === 'dateTimeRange' || field.type === 'dicRange') {
+		} else if (field.type === 'dateRange' || field.type === 'datetimeRange' || field.type === 'dicRange') {
 			queryParams[field.prop] = cachedParams?.[field.prop] ?? field.defaultValue ?? [];
 		} else {
 			queryParams[field.prop] = cachedParams?.[field.prop] ?? field.defaultValue ?? undefined;
@@ -562,10 +562,10 @@ const saveSetting = () => {
 
 // 恢复默认
 const resetSetting = () => {
-	tempSettingFields.value = props.fields.map((f) => ({
+	tempSettingFields.value = props.fields.map((f, index) => ({
 		label: f.label,
 		prop: f.prop,
-		visible: true,
+		visible: index < 2,
 	}));
 	keywordVisible.value = true;
 };

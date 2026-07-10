@@ -20,7 +20,9 @@ import { BASE_PATH, COLLECTION_FORMATS, RequestArgs, BaseAPI, RequiredError } fr
 import { AddUserRegWayInput } from '../models';
 import { AdminResultInt64 } from '../models';
 import { AdminResultListUserRegWayOutput } from '../models';
+import { AdminResultSqlSugarPagedListUserRegWayOutput } from '../models';
 import { BaseIdInput } from '../models';
+import { PageAdvancedInput } from '../models';
 import { PageUserRegWayInput } from '../models';
 import { UpdateUserRegWayInput } from '../models';
 /**
@@ -175,6 +177,54 @@ export const SysUserRegWayApiAxiosParamCreator = function (configuration?: Confi
         },
         /**
          * 
+         * @summary 查询注册方案高级查询分页列表 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiSysUserRegWayPageAdvancedPost: async (body?: PageAdvancedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/sysUserRegWay/pageAdvanced`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, 'https://example.com');
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+            const localVarRequestOptions :AxiosRequestConfig = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            // http bearer authentication required
+            if (configuration && configuration.accessToken) {
+                const accessToken = typeof configuration.accessToken === 'function'
+                    ? await configuration.accessToken()
+                    : await configuration.accessToken;
+                localVarHeaderParameter["Authorization"] = "Bearer " + accessToken;
+            }
+
+            localVarHeaderParameter['Content-Type'] = 'application/json-patch+json';
+
+            const query = new URLSearchParams(localVarUrlObj.search);
+            for (const key in localVarQueryParameter) {
+                query.set(key, localVarQueryParameter[key]);
+            }
+            for (const key in options.params) {
+                query.set(key, options.params[key]);
+            }
+            localVarUrlObj.search = (new URLSearchParams(query)).toString();
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            const needsSerialization = (typeof body !== "string") || localVarRequestOptions.headers['Content-Type'] === 'application/json';
+            localVarRequestOptions.data =  needsSerialization ? JSON.stringify(body !== undefined ? body : {}) : (body || "");
+
+            return {
+                url: localVarUrlObj.pathname + localVarUrlObj.search + localVarUrlObj.hash,
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary 更新注册方案 ✏️
          * @param {UpdateUserRegWayInput} [body] 
          * @param {*} [options] Override http request option.
@@ -274,6 +324,20 @@ export const SysUserRegWayApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary 查询注册方案高级查询分页列表 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysUserRegWayPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<AdminResultSqlSugarPagedListUserRegWayOutput>>> {
+            const localVarAxiosArgs = await SysUserRegWayApiAxiosParamCreator(configuration).apiSysUserRegWayPageAdvancedPost(body, options);
+            return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
+                const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
+                return axios.request(axiosRequestArgs);
+            };
+        },
+        /**
+         * 
          * @summary 更新注册方案 ✏️
          * @param {UpdateUserRegWayInput} [body] 
          * @param {*} [options] Override http request option.
@@ -327,6 +391,16 @@ export const SysUserRegWayApiFactory = function (configuration?: Configuration, 
         },
         /**
          * 
+         * @summary 查询注册方案高级查询分页列表 🔖
+         * @param {PageAdvancedInput} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiSysUserRegWayPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig): Promise<AxiosResponse<AdminResultSqlSugarPagedListUserRegWayOutput>> {
+            return SysUserRegWayApiFp(configuration).apiSysUserRegWayPageAdvancedPost(body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary 更新注册方案 ✏️
          * @param {UpdateUserRegWayInput} [body] 
          * @param {*} [options] Override http request option.
@@ -377,6 +451,17 @@ export class SysUserRegWayApi extends BaseAPI {
      */
     public async apiSysUserRegWayListPost(body?: PageUserRegWayInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultListUserRegWayOutput>> {
         return SysUserRegWayApiFp(this.configuration).apiSysUserRegWayListPost(body, options).then((request) => request(this.axios, this.basePath));
+    }
+    /**
+     * 
+     * @summary 查询注册方案高级查询分页列表 🔖
+     * @param {PageAdvancedInput} [body] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SysUserRegWayApi
+     */
+    public async apiSysUserRegWayPageAdvancedPost(body?: PageAdvancedInput, options?: AxiosRequestConfig) : Promise<AxiosResponse<AdminResultSqlSugarPagedListUserRegWayOutput>> {
+        return SysUserRegWayApiFp(this.configuration).apiSysUserRegWayPageAdvancedPost(body, options).then((request) => request(this.axios, this.basePath));
     }
     /**
      * 
